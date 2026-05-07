@@ -1,0 +1,10 @@
+flask>=3.0
+Flask-Compress>=1.14
+httpx>=0.25
+markdown>=3.5
+fpdf2>=2.7
+pyjwt>=2.8
+requests>=2.31
+pytest>=7.0
+Pillow>=10.0
+python-dotenv>=1.0.0

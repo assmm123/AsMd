@@ -1,0 +1,68 @@
+"""Tests for ai_engine.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.core.ai_engine import *
+from src.core.ai_engine import KeyInfo, KeyManager, AIEngine
+
+class TestGet_engine:
+    def test_exists(self):
+        assert callable(get_engine)
+
+    def test_valid(self):
+        result = get_engine(None)
+        assert result is not None
+
+class TestKeyInfo:
+    def test_create(self):
+        obj = KeyInfo("sk-or-v1-testkey12345678901234567890123456789012345678901234567890")
+        assert obj is not None
+
+    def test_masked_property(self):
+        obj = KeyInfo("sk-or-v1-testkey12345678901234567890123456789012345678901234567890")
+        assert obj.masked is not None
+        assert '...' in obj.masked or '***' in obj.masked
+
+    def test_default_values(self):
+        obj = KeyInfo("sk-or-v1-testkey12345678901234567890123456789012345678901234567890")
+        assert obj.uses == 0
+        assert obj.successes == 0
+        assert obj.failures == 0
+        assert obj.active == True
+
+class TestKeyManager:
+    def test_create(self):
+        obj = KeyManager()
+        assert obj is not None
+
+    def test_get_key_exists(self):
+        obj = KeyManager()
+        assert hasattr(obj, "get_key")
+
+    def test_mark_success_exists(self):
+        obj = KeyManager()
+        assert hasattr(obj, "mark_success")
+
+    def test_mark_failure_exists(self):
+        obj = KeyManager()
+        assert hasattr(obj, "mark_failure")
+
+    def test_get_stats_exists(self):
+        obj = KeyManager()
+        assert hasattr(obj, "get_stats")
+
+    def test_print_report_exists(self):
+        obj = KeyManager()
+        assert hasattr(obj, "print_report")
+
+class TestAIEngine:
+    def test_create(self):
+        obj = AIEngine()
+        assert obj is not None
+
+    def test_chat_exists(self):
+        obj = AIEngine()
+        assert hasattr(obj, "chat")
+
+    def test_generate_docs_exists(self):
+        obj = AIEngine()
+        assert hasattr(obj, "generate_docs")

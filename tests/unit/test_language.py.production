@@ -1,0 +1,83 @@
+"""اختبار نظام اللغات - المنطق الحقيقي"""
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent.parent.parent
+
+
+class TestAppJS:
+    """اختبارات app.js"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'static/js/app.js')
+
+    def test_contains_arabic_dict(self):
+        """يحتوي على قاموس عربي"""
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'ar:' in content
+        assert 'مولد توثيق احترافي' in content
+        assert 'توليد الكل' in content
+
+    def test_contains_english_dict(self):
+        """يحتوي على قاموس إنجليزي"""
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'en:' in content
+        assert 'AI-Powered Professional Documentation' in content
+        assert 'Generate All' in content
+
+    def test_has_switch_lang_function(self):
+        """يحتوي على دالة تغيير اللغة"""
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'function switchLang' in content
+        assert 'localStorage.setItem' in content
+
+    def test_T_function_exists(self):
+        """دالة الترجمة T موجودة"""
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'function T(' in content
+
+    def test_sends_language_with_requests(self):
+        """يرسل language مع طلبات API"""
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'language: currentLang' in content
+
+
+class TestGithubJS:
+    """اختبارات github.js"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'static/js/github.js')
+
+    def test_contains_arabic_dict(self):
+        """يحتوي على قاموس عربي"""
+        content = open(BASE_DIR / 'static/js/github.js').read()
+        assert 'ar:' in content
+        assert 'محلل GitHub' in content
+        assert 'تحليل المستودع' in content
+
+    def test_contains_english_dict(self):
+        """يحتوي على قاموس إنجليزي"""
+        content = open(BASE_DIR / 'static/js/github.js').read()
+        assert 'en:' in content
+        assert 'GitHub Analyzer' in content
+        assert 'Analyze Repository' in content
+
+    def test_has_T_function(self):
+        """دالة الترجمة T موجودة"""
+        content = open(BASE_DIR / 'static/js/github.js').read()
+        assert 'function T(' in content
+
+
+class TestLangJSRemoved:
+    """اختبارات إزالة lang.js المنفصل"""
+
+    def test_lang_js_not_needed(self):
+        """lang.js لم يعد مطلوباً - كل شيء في app.js"""
+        # التأكد أن app.js يحتوي على كل وظائف اللغة
+        content = open(BASE_DIR / 'static/js/app.js').read()
+        assert 'switchLang' in content
+        assert 'updateUILanguage' in content
+        assert 'currentLang' in content

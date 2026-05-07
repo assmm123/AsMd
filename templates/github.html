@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - GitHub Analyzer</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+.github-input-wrap{position:relative;max-width:700px;margin:15px auto}
+.github-input-wrap input{width:100%;padding:14px 50px 14px 14px;border-radius:12px;border:2px solid #333;background:#1a1a2e;color:#e0e0e0;font-size:15px;text-align:center;transition:border-color .3s}
+.github-input-wrap input:focus{outline:none;border-color:#7c3aed}
+.github-input-wrap .gh-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:20px}
+.info-box{background:#1e3a5f;color:#93c5fd;padding:12px;border-radius:8px;margin:10px auto;max-width:700px;font-size:12px;text-align:right;line-height:1.8}
+.bar-wrap{max-width:700px;margin:8px auto}
+.progress-bar{display:none;height:4px;background:#7c3aed;border-radius:2px;width:0%;transition:width .3s}
+.progress-bar.error{background:#ef4444}
+.progress-bar.success{background:#059669}
+.progress-text{display:none;text-align:center;color:#888;font-size:12px;margin-top:4px}
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:15px 0}
+.overview-card{background:#1a1a2e;border:1px solid #333;border-radius:10px;padding:15px;text-align:center}
+.overview-card .num{font-size:1.8em;color:#7c3aed;font-weight:bold}
+.overview-card .lbl{color:#888;font-size:12px;margin-top:4px}
+.prod-score{text-align:center;font-size:3em;font-weight:bold;margin:10px 0}
+.prod-score.ready{color:#22c55e}
+.prod-score.warn{color:#eab308}
+.prod-score.fail{color:#ef4444}
+.prod-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.prod-check{background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:12px}
+.prod-check.pass{border-left:3px solid #22c55e}
+.prod-check.fail{border-left:3px solid #ef4444}
+.prod-check.warn{border-left:3px solid #eab308}
+.prod-check h4{color:#e0e0e0;font-size:13px;margin-bottom:4px}
+.prod-check p{color:#888;font-size:11px}
+.arch-item{background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:12px;margin:6px 0}
+.arch-item h4{color:#a78bfa;font-size:13px}
+.arch-item .path{color:#f472b6;font-size:11px;font-family:monospace}
+.arch-item p{color:#888;font-size:11px;margin-top:4px}
+.file-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#1a1a2e;border-bottom:1px solid #333;font-size:13px}
+.file-row:nth-child(odd){background:#1c1c30}
+.file-row .fname{color:#e0e0e0}
+.file-row .fsize{color:#888;font-size:11px}
+.file-row .flang{background:#7c3aed;color:#fff;padding:1px 8px;border-radius:10px;font-size:10px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🔗 GitHub Analyzer</h1>
+  <p class="subtitle">Analyze any public GitHub repository</p>
+  <div class="lang-btns">
+    <button class="lang-btn active" id="btnAr" onclick="switchLang('ar')">AR</button>
+    <button class="lang-btn" id="btnEn" onclick="switchLang('en')">EN</button>
+  </div>
+</div>
+<div class="container">
+
+<div class="github-input-wrap">
+  <span class="gh-icon">🐙</span>
+  <input type="text" id="githubUrl" placeholder="https://github.com/user/repo" onfocus="if(!this.value)this.value=''">
+</div>
+
+<div class="info-box">
+  <strong>📌 Usage:</strong><br>
+  • Public repo: <code>user/repo</code> or <code>github.com/user/repo</code><br>
+  • Private repos not supported
+</div>
+
+<div style="text-align:center;margin:8px 0">
+  <button class="btn btn-primary" onclick="analyzeRepo()">🔍 Analyze Repository</button>
+</div>
+
+<div class="bar-wrap">
+  <div class="progress-bar" id="progressBar"></div>
+  <p class="progress-text" id="progressText"></p>
+</div>
+
+<div class="status" id="statusMsg"></div>
+
+<div class="stats-bar" id="statsBar">
+  <span id="statFiles">0</span> Files | <span id="statFuncs">0</span> Functions | <span id="statClasses">0</span> Classes | <span id="statLines">0</span> Lines
+</div>
+
+<div class="results-area" id="resultsArea">
+  <div class="toolbar">
+    <div class="tabs" id="tabBar">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="readme">README</button>
+      <button class="tab" data-tab="architecture">Architecture</button>
+      <button class="tab" data-tab="api">API</button>
+      <button class="tab" data-tab="files">Files</button>
+      <button class="tab" data-tab="production">Production</button>
+    </div>
+  </div>
+
+  <div class="tab-content active" id="tab-overview"></div>
+  <div class="tab-content" id="tab-readme"></div>
+  <div class="tab-content" id="tab-architecture"></div>
+  <div class="tab-content" id="tab-api"></div>
+  <div class="tab-content" id="tab-files"></div>
+  <div class="tab-content" id="tab-production"></div>
+
+  <div class="export-row">
+    <button class="btn btn-sm btn-secondary" onclick="copyCurrentTab()">📋 Copy</button>
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('markdown')">📥 MD</button>
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('html')">🌐 HTML</button>
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('pdf')">📕 PDF</button>
+    <button class="btn btn-sm btn-primary" onclick="exportDoc('zip')">📦 ZIP</button>
+  </div>
+</div>
+
+</div>
+
+<div class="copy-toast" id="copyToast">✓ Copied!</div>
+<a href="/" class="back" style="text-align:center;display:block;margin-top:20px">← Back to DocGen</a>
+
+<script src="/static/js/github.js"></script>
+</body>
+</html>

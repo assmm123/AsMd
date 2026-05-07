@@ -1,0 +1,47 @@
+"""اختبار middleware.py - المنطق الحقيقي"""
+
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from src.auth.middleware import get_token_from_request, login_required, admin_required
+from src.auth.jwt import create_token, verify_token
+from src.auth.models import db
+
+
+class TestGetTokenFromRequest:
+    """اختبارات استخراج التوكن من الطلب"""
+
+    def test_import_works(self):
+        """الدوال تستورد بدون أخطاء"""
+        assert callable(get_token_from_request)
+        assert callable(login_required)
+        assert callable(admin_required)
+
+
+class TestJWTIdentity:
+    """اختبارات مبدأ JWT للهوية فقط"""
+
+    def test_token_contains_user_id(self):
+        """التوكن يحتوي على user_id فقط"""
+        db.create_user('testmid', 'pass123', 'testmid@test.com')
+        token = create_token('testmid')
+        payload = verify_token(token)
+        assert 'user_id' in payload
+        assert 'role' in payload
+        # JWT للهوية فقط - لا tier ولا daily_requests
+        assert 'tier' not in payload
+        assert 'daily_requests' not in payload
+        # تنظيف
+        del db.users['testmid']
+
+    def test_user_data_in_db_not_jwt(self):
+        """بيانات المستخدم في DB وليس في JWT"""
+        db.create_user('testmid2', 'pass123', 'testmid2@test.com')
+        token = create_token('testmid2')
+        payload = verify_token(token)
+        user = db.get_user(payload['user_id'])
+        # DB مصدر الحقيقة
+        assert user is not None
+        assert user['email'] == 'testmid2@test.com'
+        # تنظيف
+        del db.users['testmid2']

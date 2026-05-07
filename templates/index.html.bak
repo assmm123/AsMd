@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DocGen</title>
+<link rel="manifest" href="/pwa/manifest.json">
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+.header-icons{display:flex;gap:10px;align-items:center}
+.header-btn{background:transparent;border:1px solid #444;color:#888;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s}
+.header-btn:hover{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.user-name{color:#a78bfa;font-size:14px}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.popup{background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:25px;width:92%;max-width:380px;position:relative}
+.popup h2{color:#7c3aed;text-align:center;margin-bottom:15px;font-size:1.2em}
+.popup input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:16px;display:block}
+.popup button{width:100%;padding:12px;margin-top:8px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;display:block}
+.popup button:disabled{opacity:0.5}
+.popup .msg{display:none;padding:10px;border-radius:6px;margin-top:10px;font-size:13px;text-align:center}
+.popup .msg.error{background:#7f1d1d;color:#fca5a5;display:block}
+.popup .msg.success{background:#064e3b;color:#6ee7b7;display:block}
+.popup .close-btn{position:absolute;top:10px;left:10px;background:transparent;border:none;color:#888;font-size:20px;cursor:pointer;width:30px;height:30px}
+.popup .tabs{display:flex;margin-bottom:15px;background:#0f0f1a;border-radius:8px;padding:3px}
+.popup .tab{flex:1;padding:8px;border:none;background:transparent;color:#888;cursor:pointer;font-size:12px;border-radius:6px}
+.popup .tab.active{background:#7c3aed;color:#fff}
+.popup .link{color:#888;text-align:center;display:block;margin-top:12px;font-size:12px;cursor:pointer}
+.spinner{display:none;width:20px;height:20px;border:2px solid #333;border-top:2px solid #7c3aed;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/pwa/service-worker.js")}</script>
+</head>
+<body>
+<div class="header">
+  <h1>📄 DocGen</h1>
+  <p class="subtitle">Smart Documentation Generator</p>
+  <div class="lang-btns">
+    <button class="lang-btn active" id="btnAr" onclick="switchLang('ar')">AR</button>
+    <button class="lang-btn" id="btnEn" onclick="switchLang('en')">EN</button>
+  </div>
+  <div class="header-icons" style="justify-content:center;margin-top:8px">
+    <span class="user-name" id="userDisplay" style="display:none"></span>
+    <button class="header-btn" id="btnRegister" onclick="openAuth('register')">📝 حساب جديد</button>
+    <button class="header-btn" id="btnLogin" onclick="openAuth('login')">🔑 دخول</button>
+    <button class="header-btn" id="btnLogout" style="display:none" onclick="logout()">🚪 خروج</button>
+  </div>
+</div>
+<div class="container">
+
+<div class="dropzone" id="dropzone">
+  <div class="icon">📁</div>
+  <div class="text">Drop files here or click to browse</div>
+  <div class="hint">Python .py | JavaScript .js | HTML .html | CSS .css</div>
+  <input type="file" id="fileInput" multiple hidden accept=".py,.js,.jsx,.ts,.tsx,.html,.css,.json,.java,.php,.rb,.go,.rs,.swift,.c,.cpp,.h,.md,.txt,.csv,.sql,.yaml,.yml,.xml">
+</div>
+
+<div class="upload-area">
+  <a href="/test-generator" style="display:inline-flex;align-items:center;gap:6px;color:#a78bfa;text-decoration:none;font-size:14px;margin:0 8px">🧪 Test Generator</a>
+  <a href="/github-page" class="gh-icon-link">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+    GitHub
+  </a>
+</div>
+
+<div style="text-align:center;margin-bottom:15px">
+  <button class="btn btn-sm btn-secondary" onclick="toggleHelp()" id="btnHelp">Show supported files</button>
+  <div id="helpBox" style="display:none;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:15px;margin-top:10px;text-align:right;font-size:0.8em;color:#888">
+    <p style="color:#a78bfa;margin-bottom:8px"><strong>Supported extensions:</strong></p>
+    <p>.py .js .jsx .ts .tsx .html .css .json .xml .yaml .yml</p>
+    <p>.java .php .rb .go .rs .swift .c .cpp .h .kt .scala .r .m .mm</p>
+    <p>.md .txt .csv .sql .sh .bash</p>
+    <p style="color:#f472b6;margin-top:8px"><strong>Blocked:</strong> .exe .dll .so .apk .db .sqlite .pdf .zip .png .jpg</p>
+  </div>
+</div>
+
+<div class="file-list" id="fileList"></div>
+<div class="btn-row" id="actionBtns" style="display:none">
+  <button class="btn btn-primary" id="btnGenerateAll">Generate All</button>
+  <button class="btn btn-secondary" id="btnClear">Clear</button>
+  <button class="btn btn-secondary" onclick="installApp()">📲 Install</button>
+  <a href="/docs" class="btn btn-secondary" style="text-decoration:none;display:inline-block">📄 Docs</a>
+</div>
+<div class="loading" id="loading"><div class="spinner"></div><p>Generating...</p></div>
+<div class="status" id="status"></div>
+<div class="copy-toast" id="copyToast">✓ Copied!</div>
+<div class="stats-bar" id="statsBar"><span id="statFiles">0</span> Files | <span id="statFuncs">0</span> Funcs | <span id="statClasses">0</span> Classes | <span id="statLines">0</span> Lines</div>
+<div class="results-area" id="resultsArea">
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" data-tab="overview">Overview</button>
+      <button class="tab" data-tab="readme">README</button>
+      <button class="tab" data-tab="architecture">Architecture</button>
+      <button class="tab" data-tab="api">API</button>
+      <button class="tab" data-tab="files">Files</button>
+      <button class="tab" data-tab="production">Production</button>
+    </div>
+  </div>
+  <div class="tab-content active" id="tab-overview"></div>
+  <div class="tab-content" id="tab-readme"></div>
+  <div class="tab-content" id="tab-architecture"></div>
+  <div class="tab-content" id="tab-api"></div>
+  <div class="tab-content" id="tab-files"></div>
+  <div class="tab-content" id="tab-production"></div>
+  <div class="export-row">
+    <button class="btn btn-sm btn-secondary" id="btnMD">📥 MD</button>
+    <button class="btn btn-sm btn-secondary" id="btnHTML">🌐 HTML</button>
+    <button class="btn btn-sm btn-secondary" id="btnPDF">📕 PDF</button>
+    <button class="btn btn-sm btn-primary" id="btnZIP">📦 ZIP</button>
+  </div>
+</div>
+</div>
+
+<!-- Auth Popup -->
+<div class="overlay" id="authOverlay">
+<div class="popup" id="authPopup">
+<button class="close-btn" onclick="closeAuth()">✕</button>
+<h2 id="popupTitle">تسجيل الدخول</h2>
+<div class="tabs" id="popupTabs">
+<button class="tab active" id="popupTabLogin" onclick="switchPopupTab('login')">دخول</button>
+<button class="tab" id="popupTabRegister" onclick="switchPopupTab('register')">حساب جديد</button>
+</div>
+<div id="popup-login">
+<input type="text" id="popupLoginUser" placeholder="اسم المستخدم">
+<input type="password" id="popupLoginPass" placeholder="كلمة المرور">
+<button onclick="popupLogin()">دخول</button>
+<div class="spinner" id="popupLoginSpinner"></div>
+<p class="msg" id="popupLoginMsg"></p>
+</div>
+<div id="popup-register" style="display:none">
+<input type="text" id="popupRegUser" placeholder="اسم المستخدم">
+<input type="email" id="popupRegEmail" placeholder="البريد الإلكتروني">
+<input type="password" id="popupRegPass" placeholder="كلمة المرور">
+<button onclick="popupRegister()">إنشاء حساب</button>
+<div class="spinner" id="popupRegSpinner"></div>
+<p class="msg" id="popupRegMsg"></p>
+</div>
+</div>
+</div>
+
+<div id="pwaStatus" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:20px;color:#fff;font-size:13px;z-index:9999;text-align:center"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

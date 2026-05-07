@@ -1,0 +1,106 @@
+"""اختبار auth.html - المنطق الحقيقي"""
+
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+from main import app
+from src.auth.models import db
+from src.auth.jwt import create_token
+
+
+class TestAuthPage:
+    """اختبارات صفحة المصادقة"""
+
+    def test_auth_html_exists(self):
+        """الملف موجود"""
+        assert os.path.exists('templates/auth.html')
+
+    def test_auth_route_returns_200(self):
+        """/auth يستجيب 200"""
+        with app.test_client() as client:
+            resp = client.get('/auth')
+            assert resp.status_code == 200
+
+    def test_auth_html_contains_tabs(self):
+        """الصفحة تحتوي على 3 تبويبات"""
+        with open('templates/auth.html', 'r') as f:
+            content = f.read()
+        assert 'دخول' in content
+        assert 'حساب جديد' in content
+        assert 'كلمة المرور' in content
+
+
+class TestLogoutWithAuth:
+    """اختبارات تسجيل الخروج"""
+
+    def test_logout_with_valid_jwt_returns_200(self):
+        """/logout مع JWT صحيح يرجع 200"""
+        db.create_user('logouttest', 'pass123', 'logouttest@test.com')
+        token = create_token('logouttest')
+        with app.test_client() as client:
+            resp = client.get('/logout', headers={'Authorization': f'Bearer {token}'})
+            assert resp.status_code == 200
+        del db.users['logouttest']
+
+    def test_logout_without_jwt_returns_401(self):
+        """/logout بدون JWT يرجع 401"""
+        with app.test_client() as client:
+            resp = client.get('/logout')
+            assert resp.status_code == 401
+
+
+class TestRegisterFlow:
+    """اختبارات تدفق التسجيل"""
+
+    def test_register_creates_user(self):
+        """/register ينشئ مستخدم"""
+        with app.test_client() as client:
+            resp = client.post('/register', json={
+                'username': 'regtest',
+                'email': 'regtest@test.com',
+                'password': 'pass123'
+            })
+            assert resp.status_code == 200
+            data = resp.get_json()
+            assert data['success'] == True
+        # تنظيف
+        if 'regtest' in db.users:
+            del db.users['regtest']
+
+    def test_register_duplicate_fails(self):
+        """/register لمستخدم مكرر يفشل"""
+        db.create_user('regdup', 'pass123', 'regdup@test.com')
+        with app.test_client() as client:
+            resp = client.post('/register', json={
+                'username': 'regdup',
+                'email': 'regdup@test.com',
+                'password': 'pass123'
+            })
+            assert resp.status_code == 400
+        del db.users['regdup']
+
+
+class TestForgotPasswordFlow:
+    """اختبارات استعادة كلمة المرور"""
+
+    def test_forgot_password_existing_email(self):
+        """استعادة لبريد موجود يرجع 200"""
+        db.create_user('forgotuser', 'pass123', 'forgot@test.com')
+        with app.test_client() as client:
+            resp = client.post('/forgot-password', json={'email': 'forgot@test.com'})
+            assert resp.status_code == 200
+        del db.users['forgotuser']
+
+    def test_forgot_password_unknown_email(self):
+        """استعادة لبريد غير موجود يرجع 400"""
+        with app.test_client() as client:
+            resp = client.post('/forgot-password', json={'email': 'noone@test.com'})
+            assert resp.status_code == 400

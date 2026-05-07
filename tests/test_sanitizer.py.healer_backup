@@ -1,0 +1,52 @@
+"""Tests for sanitizer.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.security.sanitizer import *
+
+class TestSanitize_text:
+    def test_exists(self):
+        assert callable(sanitize_text)
+
+    def test_valid(self):
+        result = sanitize_text("hello", 42)
+        assert result is not None
+
+class TestSanitize_filename:
+    def test_exists(self):
+        assert callable(sanitize_filename)
+
+    def test_valid(self):
+        result = sanitize_filename("test.py")
+        assert result is not None
+
+class TestSanitize_code:
+    def test_exists(self):
+        assert callable(sanitize_code)
+
+    def test_valid(self):
+        result = sanitize_code("print(1)", 42)
+        assert result is not None
+
+class TestSanitize_url:
+    def test_exists(self):
+        assert callable(sanitize_url)
+
+    def test_valid(self):
+        result = sanitize_url("https://example.com")
+        assert result is not None
+
+class TestDetect_threats:
+    def test_exists(self):
+        assert callable(detect_threats)
+
+    def test_valid(self):
+        result = detect_threats("hello")
+        assert result is not None
+
+class TestDeep_clean:
+    def test_exists(self):
+        assert callable(deep_clean)
+
+    def test_valid(self):
+        result = deep_clean("hello", 42)
+        assert result is not None

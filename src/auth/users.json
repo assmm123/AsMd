@@ -1,0 +1,18 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "a90420b717258f5f2c760294549e7d4d0548fe2a3c05ca365657a26813bf87e9:9f9f815fd6df475cb45a5eb16ab559b22c716d61c419e4ee9a9285503847e3ce",
+    "email": "admin@docgen.com",
+    "created_at": "2026-05-01T23:24:06.709783",
+    "provider": "email"
+  },
+  "Assm": {
+    "username": "Assm",
+    "password": "08fbbaea43ed2b4d4c9b2379dec51c9e4475244d86dedb173711c9a3b20d18b0:9b39ea9948cc8aa386e92a96efb57a30a624b42ea16aaeeb6eed67a21295e2a8",
+    "email": "assmm944@gmail.com",
+    "created_at": "2026-05-02T00:51:18.219876",
+    "provider": "email",
+    "verification_code": "768457",
+    "reset_code": null
+  }
+}

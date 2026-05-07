@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - Login</title>
+<link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body style="display:flex;align-items:center;justify-content:center">
+<div class="card">
+  <h1>DocGen</h1>
+  <p class="subtitle">Login to continue</p>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p class="msg error" id="error">Invalid credentials</p>
+  <p class="msg success" id="success">Login successful!</p>
+  <a href="/" style="display:block;text-align:center;margin-top:15px;color:#888;font-size:13px">Back to Home</a>
+</div>
+
+<script>
+async function login() {
+  var u = document.getElementById('username').value;
+  var p = document.getElementById('password').value;
+  var r = await fetch('/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username: u, password: p})
+  });
+  var d = await r.json();
+  if (d.success) {
+    localStorage.setItem('token', d.token);
+    document.getElementById('success').style.display = 'block';
+    document.getElementById('error').style.display = 'none';
+    setTimeout(function() { window.location.href = '/'; }, 1000);
+  } else {
+    document.getElementById('error').style.display = 'block';
+    document.getElementById('success').style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>

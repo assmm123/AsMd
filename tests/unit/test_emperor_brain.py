@@ -1,0 +1,216 @@
+"""اختبار Deep Code Analyzer - المنطق الحقيقي"""
+
+import sys, os, tempfile
+from pathlib import Path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+from src.testing.emperor.brain import (
+    DeepAnalyzer, PythonAnalyzer, JavaScriptAnalyzer,
+    analyze_file, analyze_directory, get_analysis_summary,
+    FunctionInfo, ClassInfo, FileAnalysis
+)
+
+
+class TestPythonAnalyzer:
+    """اختبارات محلل Python"""
+
+    def test_analyze_function(self):
+        """تحليل دالة بسيطة"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def hello(name: str) -> str:\n    """Say hello"""\n    return f"Hello {name}"\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result is not None
+            assert len(result.functions) == 1
+            assert result.functions[0].name == 'hello'
+            assert result.functions[0].return_type == 'str'
+            assert len(result.functions[0].args) == 1
+            assert result.functions[0].args[0].name == 'name'
+            assert result.functions[0].args[0].type_hint == 'str'
+            assert result.functions[0].docstring == 'Say hello'
+        finally:
+            os.unlink(fp)
+
+    def test_analyze_class(self):
+        """تحليل كلاس"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('class MyClass:\n    """Test class"""\n    def method(self, x: int) -> bool:\n        return x > 0\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result is not None
+            assert len(result.classes) == 1
+            assert result.classes[0].name == 'MyClass'
+            assert len(result.classes[0].methods) == 1
+        finally:
+            os.unlink(fp)
+
+    def test_analyze_raises(self):
+        """استخراج الاستثناءات"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def validate(x: int):\n    if x < 0:\n        raise ValueError("Negative")\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert 'ValueError' in result.functions[0].raises
+        finally:
+            os.unlink(fp)
+
+    def test_analyze_calls(self):
+        """استخراج استدعاءات الدوال"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def foo():\n    return 1\n\ndef bar():\n    return foo()\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            bar_func = [f for f in result.functions if f.name == 'bar'][0]
+            assert 'foo' in bar_func.calls
+        finally:
+            os.unlink(fp)
+
+    def test_relationships(self):
+        """اكتشاف العلاقات بين الدوال"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def a():\n    return b()\n\ndef b():\n    return 1\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert len(result.relationships) >= 1
+            rel = result.relationships[0]
+            assert rel['caller'] == 'a'
+            assert rel['callee'] == 'b'
+        finally:
+            os.unlink(fp)
+
+    def test_scenarios(self):
+        """اكتشاف السيناريوهات"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def register(u, p):\n    return login(u, p)\n\ndef login(u, p):\n    return create_session(u)\n\ndef create_session(u):\n    return {"user": u}\n\ndef logout():\n    pass\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            found = any('register' in s and 'login' in s and 'create_session' in s for s in result.scenarios)
+            assert found
+        finally:
+            os.unlink(fp)
+
+    def test_complexity(self):
+        """حساب التعقيد"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def complex_func(x):\n    if x > 0:\n        for i in range(x):\n            if i % 2 == 0:\n                pass\n    return x\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result.functions[0].complexity >= 3
+        finally:
+            os.unlink(fp)
+
+    def test_imports(self):
+        """استخراج الاستيرادات"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('import os\nfrom typing import Optional, List\n\ndef f():\n    pass\n')
+            fp = f.name
+        try:
+            ana = PythonAnalyzer()
+            result = ana.analyze_file(fp)
+            assert len(result.imports) >= 1
+        finally:
+            os.unlink(fp)
+
+
+class TestJavaScriptAnalyzer:
+    """اختبارات محلل JavaScript"""
+
+    def test_analyze_js_function(self):
+        """تحليل دالة JavaScript"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            f.write('function greet(name) { return "Hello " + name; }\n')
+            fp = f.name
+        try:
+            ana = JavaScriptAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result is not None
+            assert len(result.functions) >= 1
+            assert result.functions[0].name == 'greet'
+        finally:
+            os.unlink(fp)
+
+    def test_analyze_js_class(self):
+        """تحليل كلاس JavaScript"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            f.write('class Calculator { add(a, b) { return a + b; } }\n')
+            fp = f.name
+        try:
+            ana = JavaScriptAnalyzer()
+            result = ana.analyze_file(fp)
+            assert len(result.classes) >= 1
+        finally:
+            os.unlink(fp)
+
+
+class TestDeepAnalyzer:
+    """اختبارات المحلل الرئيسي"""
+
+    def test_delegates_to_python(self):
+        """تفويض لملف Python"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def test():\n    pass\n')
+            fp = f.name
+        try:
+            ana = DeepAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result is not None
+            assert result.language == 'python'
+        finally:
+            os.unlink(fp)
+
+    def test_delegates_to_javascript(self):
+        """تفويض لملف JavaScript"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            f.write('function test() {}\n')
+            fp = f.name
+        try:
+            ana = DeepAnalyzer()
+            result = ana.analyze_file(fp)
+            assert result is not None
+            assert result.language == 'javascript'
+        finally:
+            os.unlink(fp)
+
+
+class TestConvenience:
+    """اختبارات الدوال المساعدة"""
+
+    def test_analyze_file(self):
+        """analyze_file يعمل"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+            f.write('def f():\n    pass\n')
+            fp = f.name
+        try:
+            result = analyze_file(fp)
+            assert isinstance(result, FileAnalysis)
+        finally:
+            os.unlink(fp)
+
+    def test_get_summary(self):
+        """get_analysis_summary يعمل"""
+        fa = FileAnalysis(filepath="test.py")
+        fa.functions.append(FunctionInfo(name="test_func"))
+        summary = get_analysis_summary(fa)
+        assert summary['functions_count'] == 1

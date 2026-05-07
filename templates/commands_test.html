@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>أوامر الاختبار</title><link rel="stylesheet" href="/static/css/main.css"><style>
+.section{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin:15px 0}.section h2{color:#7c3aed;margin-bottom:15px}.section h3{color:#a78bfa;margin:15px 0 8px}.section table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}.section th{background:#7c3aed;padding:8px;text-align:right}.section td{padding:6px 8px;border:1px solid #333}pre{background:#0f0f1a;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.6}code{color:#f472b6}.result{background:#0a0a14;border-left:3px solid #059669;border-radius:6px;padding:10px;margin:8px 0;font-size:11px;color:#6ee7b7;font-family:monospace;white-space:pre-wrap}.cmd{background:#0f0f1a;padding:10px;border-radius:6px;margin:5px 0;font-size:12px;font-family:monospace}
+</style></head>
+<body>
+<div class="header"><h1>⚡ أوامر الاختبار</h1><p class="subtitle">Test Commands</p></div>
+<div class="container">
+<div class="section">
+<h2>📋 الأوامر</h2>
+<table><tr><th>الأمر</th><th>الوظيفة</th><th>مثال</th></tr>
+<tr><td><code>etest</code></td><td>تحليل + توليد + إصلاح</td><td><code>etest src/</code></td></tr>
+<tr><td><code>etest -f</code></td><td>إصلاح اختبارات</td><td><code>etest -f tests/</code></td></tr>
+<tr><td><code>etest -w</code></td><td>مراقبة</td><td><code>etest -w</code></td></tr>
+<tr><td><code>etest -r</code></td><td>تقرير</td><td><code>etest -r</code></td></tr>
+<tr><td><code>etest -i</code></td><td>تكامل</td><td><code>etest -i a.py b.py</code></td></tr></table>
+
+<h3>🧪 توليد اختبارات</h3>
+<div class="cmd"><code>etest src/auth.py</code></div>
+<div class="result">🧠 3 functions, 1 class<br>🤲 12 tests → tests/test_auth.py<br>🧪 10 passed, 2 failed<br>🔧 2 healed ✅</div>
+
+<h3>🔧 إصلاح</h3>
+<div class="cmd"><code>etest -f tests/</code></div>
+<div class="result">📄 test_auth.py: 12 tests<br>   ✅ 10 passed (untouched)<br>   ❌ 2 failed → 🔧 healed<br>2/3 healed</div>
+
+<h3>👁️ مراقبة</h3>
+<div class="cmd"><code>etest -w</code></div>
+<div class="result">👁️ Watching ~ src/<br>[14:30] auth.py → ✅ 12 tests<br>Ctrl+C to stop</div>
+
+<h3>🔗 تكامل</h3>
+<div class="cmd"><code>etest -i src/auth.py src/db.py</code></div>
+<div class="result">🧠 auth.py ↔ db.py<br>   auth.login() → db.find_user()<br>🤲 8 integration tests<br>🧪 8 passed ✅</div>
+
+<h3>📊 تقرير</h3>
+<div class="cmd"><code>etest -r</code></div>
+<div class="result">Sessions: 42 | Tests: 1,250<br>Fixes: 89 | Rate: 88%<br>Top: TypeError 23x | ImportError 15x</div>
+
+<h3>📥 التثبيت</h3>
+<pre><code>alias etest='python ~/doc-generator/src/testing/emperor/emperor.py'
+source ~/.bashrc</code></pre>
+</div>
+<a href="/" class="back" style="text-align:center;display:block;margin-top:20px">← العودة</a>
+</div></body></html>

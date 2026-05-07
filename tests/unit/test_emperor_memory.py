@@ -1,0 +1,202 @@
+"""اختبار Imperial Memory - المنطق الحقيقي"""
+
+import sys, os, json, time
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+from src.testing.emperor.memory import ImperialMemory, get_memory
+
+
+class TestMemoryInit:
+    """اختبارات إنشاء الذاكرة"""
+
+    def test_create_default(self):
+        """إنشاء ذاكرة افتراضية"""
+        mem = ImperialMemory("test_init.json")
+        assert mem is not None
+        assert mem.data['version'] == '1.1.0'
+
+    def test_default_statistics(self):
+        """إحصائيات افتراضية صحيحة"""
+        mem = ImperialMemory("test_init2.json")
+        stats = mem.get_statistics()
+        assert stats['total_runs'] == 0
+        assert stats['total_fixes_applied'] == 0
+
+    def test_load_existing(self):
+        """تحميل ذاكرة موجودة"""
+        mem1 = ImperialMemory("test_load.json")
+        mem1.remember_error("TypeError", "test", "f.py", "func", "fix", "surface", 1, True)
+        mem2 = ImperialMemory("test_load.json")
+        assert mem2.get_statistics()['total_runs'] >= 1
+
+
+class TestRememberError:
+    """اختبارات تسجيل الأخطاء"""
+
+    def test_remember_success(self):
+        """تسجيل خطأ تم إصلاحه بنجاح"""
+        mem = ImperialMemory("test_rem.json")
+        mem.clear()
+        mem.remember_error("TypeError", "expected str", "src/a.py", "func1",
+                           "changed type", "surface", 1, True,
+                           test_file="tests/test_a.py", test_name="test_func1")
+        stats = mem.get_statistics()
+        assert stats['total_runs'] == 1
+        assert stats['total_fixes_applied'] == 1
+
+    def test_remember_failure(self):
+        """تسجيل خطأ فشل إصلاحه"""
+        mem = ImperialMemory("test_rem2.json")
+        mem.clear()
+        mem.remember_error("ImportError", "no module", "src/b.py", "func2",
+                           "added import", "surface", 1, False)
+        stats = mem.get_statistics()
+        assert stats['total_fixes_failed'] == 1
+
+    def test_error_patterns_count(self):
+        """عدد أنماط الأخطاء يزيد"""
+        mem = ImperialMemory("test_rem3.json")
+        mem.clear()
+        mem.remember_error("TypeError", "msg1", "f1.py", "f1", "fix1", "l1", 1, True)
+        mem.remember_error("TypeError", "msg2", "f2.py", "f2", "fix2", "l1", 1, True)
+        patterns = mem.get_error_patterns()
+        assert patterns['TypeError']['count'] >= 2
+
+
+class TestRecallSimilar:
+    """اختبارات استرجاع الأخطاء المشابهة"""
+
+    def test_recall_by_type(self):
+        """استرجاع حسب نوع الخطأ"""
+        mem = ImperialMemory("test_recall.json")
+        mem.clear()
+        mem.remember_error("TypeError", "msg", "f.py", "func", "fix", "l1", 1, True)
+        similar = mem.recall_similar("TypeError")
+        assert len(similar) >= 1
+
+    def test_recall_by_file(self):
+        """استرجاع حسب الملف"""
+        mem = ImperialMemory("test_recall2.json")
+        mem.clear()
+        mem.remember_error("ValueError", "msg", "src/specific.py", "f", "fix", "l1", 1, True)
+        mem.remember_error("TypeError", "msg", "src/other.py", "f", "fix", "l1", 1, True)
+        similar = mem.recall_similar("ValueError", file_path="src/specific.py")
+        assert len(similar) >= 1
+        assert similar[0]['file'] == "src/specific.py"
+
+    def test_recall_by_function(self):
+        """استرجاع حسب الدالة"""
+        mem = ImperialMemory("test_recall3.json")
+        mem.clear()
+        sig = ImperialMemory.generate_signature("unique_func", [], "str")
+        mem.remember_error("TypeError", "msg", "f.py", "unique_func", "fix", "l1", 1, True,
+                           code_signature=sig)
+        similar = mem.recall_similar("TypeError", function_name="unique_func")
+        assert len(similar) >= 1
+
+
+class TestCommonFixes:
+    """اختبارات الإصلاحات الشائعة"""
+
+    def test_common_fixes_ordered(self):
+        """الإصلاحات مرتبة حسب التكرار"""
+        mem = ImperialMemory("test_fixes.json")
+        mem.clear()
+        mem.remember_error("TypeError", "m1", "f.py", "f", "fix_a", "l1", 1, True)
+        mem.remember_error("TypeError", "m2", "f.py", "f", "fix_a", "l1", 1, True)
+        mem.remember_error("TypeError", "m3", "f.py", "f", "fix_b", "l1", 1, True)
+        fixes = mem.get_common_fixes("TypeError")
+        assert fixes[0] == "fix_a"
+
+
+class TestFileReputation:
+    """اختبارات سمعة الملفات"""
+
+    def test_reputation_improves(self):
+        """السمعة تتحسن مع النجاح"""
+        mem = ImperialMemory("test_rep.json")
+        mem.clear()
+        for i in range(10):
+            mem.remember_error("TypeError", "m", "src/good.py", "f", "fix", "l1", 1, True)
+        rep = mem.get_file_reputation("src/good.py")
+        assert rep['reputation'] == "excellent"
+
+    def test_problematic_files(self):
+        """الملفات الفاشلة تظهر في القائمة"""
+        mem = ImperialMemory("test_rep2.json")
+        mem.clear()
+        for i in range(10):
+            mem.remember_error("TypeError", "m", "src/bad.py", "f", "fix", "l1", 1, False)
+        problematic = mem.get_problematic_files()
+        assert "src/bad.py" in problematic
+
+
+class TestScenarios:
+    """اختبارات السيناريوهات"""
+
+    def test_remember_scenario(self):
+        """تسجيل سيناريو"""
+        mem = ImperialMemory("test_scen.json")
+        mem.clear()
+        mem.remember_scenario("Test Flow", ["a", "b", "c"], True)
+        stats = mem.get_statistics()
+        assert stats['total_scenarios'] >= 1
+
+
+class TestGenerateSignature:
+    """اختبارات توليد التوقيع"""
+
+    def test_same_input_same_signature(self):
+        """نفس المدخل يعطي نفس التوقيع"""
+        s1 = ImperialMemory.generate_signature("func", ["a", "b"], "str")
+        s2 = ImperialMemory.generate_signature("func", ["a", "b"], "str")
+        assert s1 == s2
+
+    def test_different_input_different_signature(self):
+        """مدخل مختلف يعطي توقيع مختلف"""
+        s1 = ImperialMemory.generate_signature("func1", ["a"], "str")
+        s2 = ImperialMemory.generate_signature("func2", ["a"], "str")
+        assert s1 != s2
+
+
+class TestExportImport:
+    """اختبارات التصدير والاستيراد"""
+
+    def test_export_knowledge(self):
+        """تصدير المعرفة"""
+        mem = ImperialMemory("test_exp.json")
+        mem.clear()
+        mem.remember_error("TypeError", "m", "f.py", "f", "fix", "l1", 1, True)
+        mem.export_knowledge("test_export_knowledge.json")
+        assert os.path.exists("test_export_knowledge.json")
+
+    def test_import_knowledge(self):
+        """استيراد المعرفة"""
+        mem = ImperialMemory("test_imp.json")
+        mem.clear()
+        mem.remember_error("TypeError", "m", "f.py", "f", "fix", "l1", 1, True)
+        mem.export_knowledge("test_import_knowledge.json")
+
+        mem2 = ImperialMemory("test_imp2.json")
+        mem2.clear()
+        result = mem2.import_knowledge("test_import_knowledge.json")
+        assert result == True
+        assert mem2.get_statistics()['total_patterns'] >= 1
+
+
+def teardown_module():
+    """تنظيف ملفات الاختبار"""
+    import glob
+    for f in glob.glob("test_*.json"):
+        try:
+            os.remove(f)
+        except OSError:
+            pass

@@ -1,0 +1,92 @@
+"""اختبار github.js - المنطق الحقيقي"""
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent.parent.parent
+GH_JS_PATH = BASE_DIR / 'static' / 'js' / 'github.js'
+
+
+class TestGithubJsExists:
+    """اختبار وجود الملف"""
+    def test_file_exists(self):
+        assert GH_JS_PATH.exists()
+
+
+class TestGithubJsContent:
+    """اختبار محتوى الملف"""
+
+    def test_contains_translations(self):
+        """يحتوي على قاموس ترجمة"""
+        content = GH_JS_PATH.read_text()
+        assert 'var GH_TRANSLATIONS' in content
+
+    def test_contains_arabic(self):
+        """يحتوي على ترجمة عربية"""
+        content = GH_JS_PATH.read_text()
+        assert 'ar:' in content
+
+    def test_contains_english(self):
+        """يحتوي على ترجمة إنجليزية"""
+        content = GH_JS_PATH.read_text()
+        assert 'en:' in content
+
+    def test_contains_t_function(self):
+        """يحتوي على T()"""
+        content = GH_JS_PATH.read_text()
+        assert 'function T(' in content
+
+    def test_contains_apply_gh_lang(self):
+        """يحتوي على applyGhLang"""
+        content = GH_JS_PATH.read_text()
+        assert 'function applyGhLang' in content
+
+    def test_contains_currentlang_from_localstorage(self):
+        """يقرأ اللغة من localStorage"""
+        content = GH_JS_PATH.read_text()
+        assert "localStorage.getItem('docgen_lang')" in content
+
+    def test_contains_authorization_header(self):
+        """يرسل JWT Authorization header مع الطلبات"""
+        content = GH_JS_PATH.read_text()
+        assert 'Authorization' in content
+        assert 'Bearer' in content
+
+
+class TestGithubJsTranslationKeys:
+    """اختبار مفاتيح الترجمة"""
+
+    def test_has_title_key(self):
+        """مفتاح title موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'title:' in content
+
+    def test_has_analyze_key(self):
+        """مفتاح analyze موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'analyze:' in content
+
+    def test_has_not_found_key(self):
+        """مفتاح notFound موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'notFound:' in content
+
+    def test_has_too_large_key(self):
+        """مفتاح tooLarge موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'tooLarge:' in content
+
+    def test_has_no_code_key(self):
+        """مفتاح noCode موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'noCode:' in content
+
+    def test_has_readme_key(self):
+        """مفتاح readme موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'readme:' in content
+
+    def test_has_files_key(self):
+        """مفتاح files موجود"""
+        content = GH_JS_PATH.read_text()
+        assert 'files:' in content

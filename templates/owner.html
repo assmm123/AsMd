@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - المالك</title>
+<link rel="stylesheet" href="/static/css/owner.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div id="loginBox" class="login-box">
+<h1>👑 المالك</h1>
+<input type="password" id="ownerPass" placeholder="كلمة المرور">
+<button onclick="login()">دخول</button>
+<p class="msg" id="loginMsg"></p>
+</div>
+
+<div id="appBox" style="display:none;width:100%">
+<div class="sidebar">
+<h2>👑 لوحة التحكم</h2>
+<a data-tab="dashboard" class="active">📊 Dashboard</a>
+<a data-tab="users">👥 المستخدمين</a>
+<a data-tab="wallets">💰 المحافظ</a>
+<a data-tab="pricing">💎 الأسعار</a>
+<a data-tab="terms">📝 الشروط</a>
+<a data-tab="logs">📋 السجل</a>
+<a data-tab="notifications">🔔 إشعارات</a>
+<a href="/" target="_blank">🔗 دخول للنظام</a>
+<a onclick="logout()" style="color:#ef4444">🚪 خروج</a>
+</div>
+<div class="main">
+
+<!-- Dashboard -->
+<div class="tab-content active" id="tab-dashboard">
+<h2>📊 Dashboard</h2>
+<div class="stats-grid">
+<div class="stat-card"><div class="num" id="totalUsers">-</div><div class="lbl">المستخدمين</div></div>
+<div class="stat-card"><div class="num" id="totalRequests">-</div><div class="lbl">طلبات اليوم</div></div>
+<div class="stat-card"><div class="num" id="activeUsers">-</div><div class="lbl">نشط اليوم</div></div>
+<div class="stat-card"><div class="num" id="revenue">-</div><div class="lbl">إيرادات</div></div>
+</div>
+<div class="chart-container"><canvas id="requestsChart" height="80"></canvas></div>
+<h3>🔥 الأكثر نشاطاً</h3>
+<div class="card"><table id="topUsers"><tr><td>Loading...</td></tr></table></div>
+<h3>📋 آخر العمليات</h3>
+<div class="card"><table id="recentLogs"><tr><td>Loading...</td></tr></table></div>
+</div>
+
+<!-- Users -->
+<div class="tab-content" id="tab-users">
+<h2>👥 المستخدمين <button onclick="exportCSV()" style="float:left">📥 تصدير CSV</button></h2>
+<div class="card">
+<input type="text" id="userSearch" placeholder="بحث عن مستخدم..." oninput="searchUsers()">
+<table id="usersTable"><tr><td>Loading...</td></tr></table>
+</div>
+<div id="userDetail" class="card" style="display:none"></div>
+</div>
+
+<!-- Wallets -->
+<div class="tab-content" id="tab-wallets">
+<h2>💰 المحافظ</h2>
+<div id="walletsList"></div>
+<p class="msg" id="walletMsg"></p>
+</div>
+
+<!-- Pricing -->
+<div class="tab-content" id="tab-pricing">
+<h2>💎 الأسعار</h2>
+<div id="pricingList"></div>
+<p class="msg" id="pricingMsg"></p>
+</div>
+
+<!-- Terms -->
+<div class="tab-content" id="tab-terms">
+<h2>📝 الشروط</h2>
+<div class="card"><textarea id="termsText" rows="10"></textarea><button onclick="saveTerms()">حفظ</button></div>
+</div>
+
+<!-- Logs -->
+<div class="tab-content" id="tab-logs">
+<h2>📋 سجل العمليات</h2>
+<div class="card"><table id="logsTable"><tr><td>Loading...</td></tr></table></div>
+</div>
+
+<!-- Notifications -->
+<div class="tab-content" id="tab-notifications">
+<h2>🔔 إشعارات</h2>
+<div class="card">
+<textarea id="notifText" rows="3" placeholder="نص الإشعار"></textarea>
+<button onclick="sendNotification()">إرسال للكل</button>
+</div>
+</div>
+
+</div></div>
+<script src="/static/js/owner.js"></script>
+</body>
+</html>

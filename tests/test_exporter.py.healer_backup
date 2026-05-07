@@ -1,0 +1,47 @@
+"""Tests for exporter.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.utils.exporter import *
+from src.utils.exporter import Exporter
+
+class TestExport_docs:
+    def test_exists(self):
+        assert callable(export_docs)
+
+    def test_valid(self):
+        result = export_docs({"readme": "# Test"}, {"project_name": "test"})
+        assert result is not None
+
+class TestExporter:
+    def test_create(self):
+        obj = Exporter({"readme": "# Test Project"}, {"project_name": "test"})
+        assert obj is not None
+
+    def test_export_markdown_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_markdown")
+
+    def test_export_markdown_returns_string(self):
+        obj = Exporter({"readme": "# Test Project"}, {"project_name": "test"})
+        result = obj.export_markdown("readme")
+        assert isinstance(result, str)
+
+    def test_export_all_markdown_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_all_markdown")
+
+    def test_export_html_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_html")
+
+    def test_export_all_html_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_all_html")
+
+    def test_export_pdf_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_pdf")
+
+    def test_export_zip_exists(self):
+        obj = Exporter({"readme": "# Test"}, {"project_name": "test"})
+        assert hasattr(obj, "export_zip")

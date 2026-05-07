@@ -1,0 +1,614 @@
+/**
+ * DocGen - Smart Documentation Generator
+ * Arabic / English support
+ */
+
+// ============================================================
+// اللغة
+// ============================================================
+
+var currentLang = localStorage.getItem('docgen_lang') || 'ar';
+
+var TRANSLATIONS = {
+    ar: {
+        title: 'DocGen - مولد التوثيق الذكي',
+        subtitle: 'مولد توثيق احترافي بالذكاء الاصطناعي',
+        dropText: 'اسحب الملفات هنا أو اضغط للتصفح',
+        dropHint: 'Python .py | JavaScript .js | HTML .html | CSS .css',
+        showSupported: 'عرض الملفات المدعومة',
+        hideSupported: 'إخفاء الملفات المدعومة',
+        generateAll: 'توليد الكل',
+        clear: 'مسح',
+        install: '📲 تثبيت',
+        docs: '📄 توثيق',
+        githubLink: 'تحليل مستودع GitHub',
+        generating: 'جاري التوليد...',
+        noContent: 'لا يوجد محتوى',
+        copied: '✓ تم النسخ!',
+        readme: 'README',
+        api: 'API',
+        wiki: 'Wiki',
+        changelog: 'Changelog',
+        exportMd: '📥 MD',
+        exportHtml: '🌐 HTML',
+        exportPdf: '📕 PDF',
+        exportZip: '📦 ZIP',
+        ok: 'تم!',
+        fail: 'فشل',
+        noFiles: 'لا ملفات صالحة',
+        selectFiles: 'أضف ملفات أولاً',
+        pdfFail: 'فشل تصدير PDF',
+        zipFail: 'فشل تصدير ZIP',
+        nothingToCopy: 'لا يوجد محتوى للنسخ',
+        copyFailed: 'فشل النسخ',
+        copySuccess: 'تم النسخ!',
+        appInstalled: '✓ تم تثبيت التطبيق',
+        appAlreadyInstalled: '✓ التطبيق مثبت مسبقاً',
+        installing: '✓ جاري التثبيت...',
+        tapToInstall: 'اضغط مطولاً على الصفحة ← إضافة للشاشة الرئيسية',
+        funcs: 'دوال',
+        classes: 'كلاسات',
+        lines: 'أسطر',
+        files: 'ملفات',
+        supportedExtensions: 'الامتدادات المدعومة',
+        blockedExtensions: 'الممنوع',
+        language: 'English',
+        langCode: 'en'
+    },
+    en: {
+        title: 'DocGen - Smart Documentation Generator',
+        subtitle: 'AI-Powered Professional Documentation',
+        dropText: 'Drop files here or click to browse',
+        dropHint: 'Python .py | JavaScript .js | HTML .html | CSS .css',
+        showSupported: 'Show supported files',
+        hideSupported: 'Hide supported files',
+        generateAll: 'Generate All',
+        clear: 'Clear',
+        install: '📲 Install',
+        docs: '📄 Docs',
+        githubLink: 'Analyze GitHub Repository',
+        generating: 'Generating...',
+        noContent: 'No content',
+        copied: '✓ Copied!',
+        readme: 'README',
+        api: 'API',
+        wiki: 'Wiki',
+        changelog: 'Changelog',
+        exportMd: '📥 MD',
+        exportHtml: '🌐 HTML',
+        exportPdf: '📕 PDF',
+        exportZip: '📦 ZIP',
+        ok: 'Done!',
+        fail: 'Failed',
+        noFiles: 'No valid files',
+        selectFiles: 'Add files first',
+        pdfFail: 'PDF export failed',
+        zipFail: 'ZIP export failed',
+        nothingToCopy: 'Nothing to copy',
+        copyFailed: 'Copy failed',
+        copySuccess: 'Copied!',
+        appInstalled: '✓ App installed successfully',
+        appAlreadyInstalled: '✓ App already installed',
+        installing: '✓ Installing...',
+        tapToInstall: 'Tap and hold page → Add to Home Screen',
+        funcs: 'Functions',
+        classes: 'Classes',
+        lines: 'Lines',
+        files: 'Files',
+        supportedExtensions: 'Supported extensions',
+        blockedExtensions: 'Blocked',
+        language: 'العربية',
+        langCode: 'ar'
+    }
+};
+
+function T(key) {
+    return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || key;
+}
+
+function switchLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('docgen_lang', lang);
+    applyLang();
+}
+
+function applyLang() {
+    var el;
+    el = document.getElementById('btnLang');
+    if (el) el.textContent = T('language');
+    el = document.getElementById('btnGenerateAll');
+    if (el) el.textContent = T('generateAll');
+    el = document.getElementById('btnClear');
+    if (el) el.textContent = T('clear');
+    el = document.getElementById('btnHelp');
+    if (el) {
+        var helpBox = document.getElementById('helpBox');
+        if (helpBox && helpBox.style.display == 'block') {
+            el.textContent = T('hideSupported');
+        } else {
+            el.textContent = T('showSupported');
+        }
+    }
+    el = document.querySelector('.dropzone .text');
+    if (el) el.textContent = T('dropText');
+    el = document.querySelector('.dropzone .hint');
+    if (el) el.textContent = T('dropHint');
+    el = document.querySelector('.loading p');
+    if (el) el.textContent = T('generating');
+    el = document.querySelector('.subtitle');
+    if (el) el.textContent = T('subtitle');
+    
+    // أزرار التبويب
+    var tabs = document.querySelectorAll('.tab');
+    var tabLabels = ['readme', 'api', 'wiki', 'changelog'];
+    for (var i = 0; i < tabs.length && i < tabLabels.length; i++) {
+        tabs[i].childNodes[0].textContent = T(tabLabels[i]);
+    }
+    
+    // أزرار التصدير
+    el = document.getElementById('btnMD');
+    if (el) el.textContent = T('exportMd');
+    el = document.getElementById('btnHTML');
+    if (el) el.textContent = T('exportHtml');
+    el = document.getElementById('btnPDF');
+    if (el) el.textContent = T('exportPdf');
+    el = document.getElementById('btnZIP');
+    if (el) el.textContent = T('exportZip');
+}
+
+// ============================================================
+// PWA
+// ============================================================
+
+var deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+});
+
+window.addEventListener('appinstalled', function() {
+    var s = document.getElementById('pwaStatus');
+    if (s) {
+        s.style.display = 'block';
+        s.style.background = '#059669';
+        s.textContent = T('appInstalled');
+        setTimeout(function() { s.style.display = 'none'; }, 3000);
+    }
+});
+
+function installApp() {
+    var s = document.getElementById('pwaStatus');
+    if (!s) return;
+    
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        s.style.display = 'block';
+        s.style.background = '#059669';
+        s.textContent = T('appAlreadyInstalled');
+        setTimeout(function() { s.style.display = 'none'; }, 2000);
+    } else if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                s.style.display = 'block';
+                s.style.background = '#059669';
+                s.textContent = T('installing');
+                setTimeout(function() { s.style.display = 'none'; }, 2000);
+            }
+        });
+    } else {
+        s.style.display = 'block';
+        s.style.background = '#059669';
+        s.textContent = T('tapToInstall');
+        setTimeout(function() { s.style.display = 'none'; }, 3000);
+    }
+}
+
+// ============================================================
+// الملفات
+// ============================================================
+
+var files = [], allDocs = {};
+function D(id) { return document.getElementById(id); }
+
+var dropzone = D('dropzone');
+var fileInput = D('fileInput');
+if (dropzone && fileInput) {
+    dropzone.onclick = function() { fileInput.click(); };
+    dropzone.ondragover = function(e) { e.preventDefault(); dropzone.classList.add('dragover'); };
+    dropzone.ondragleave = function() { dropzone.classList.remove('dragover'); };
+    dropzone.ondrop = function(e) { e.preventDefault(); dropzone.classList.remove('dragover'); addFiles(e.dataTransfer.files); };
+    fileInput.onchange = function(e) { addFiles(e.target.files); };
+}
+
+function addFiles(fl) {
+    for (var i = 0; i < fl.length; i++) {
+        var f = fl[i];
+        if (!files.find(function(x) { return x.name == f.name; })) {
+            files.push({ name: f.name, file: f });
+        }
+    }
+    showFiles();
+}
+
+function showFiles() {
+    var html = '';
+    for (var i = 0; i < files.length; i++) {
+        html += '<span class="file-item" onclick="analyzeOne(' + i + ')">' + files[i].name + ' <span onclick="event.stopPropagation();removeFile(' + i + ')" style="color:#f472b6;cursor:pointer">×</span></span>';
+    }
+    D('fileList').innerHTML = html;
+    var btnRow = D('actionBtns');
+    if (btnRow) btnRow.style.display = files.length ? 'flex' : 'none';
+}
+
+function removeFile(i) {
+    files.splice(i, 1);
+    showFiles();
+}
+
+function clearAll() {
+    files = [];
+    showFiles();
+    D('resultsArea').style.display = 'none';
+    D('statsBar').style.display = 'none';
+    allDocs = {};
+}
+
+// ============================================================
+// API
+// ============================================================
+
+async function analyzeOne(i) {
+    var f = files[i];
+    if (!f) return;
+    D('loading').style.display = 'block';
+    D('resultsArea').style.display = 'none';
+    try {
+        var text = await f.file.text();
+        await fetch('/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ files: [{ filename: f.name, content: text }] })
+        });
+        var r = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ filenames: [f.name], mode: 'single', language: currentLang, doc_types: ['readme', 'api', 'wiki', 'changelog'] })
+        });
+        var d = await r.json();
+        if (d.success) {
+            allDocs = d.docs;
+            showDocs();
+            showStats(d.stats);
+        } else {
+            alert(d.error || T('fail'));
+        }
+    } catch(e) {
+        alert(e.message);
+    }
+    D('loading').style.display = 'none';
+}
+
+async function generateAll() {
+    if (!files.length) { alert(T('selectFiles')); return; }
+    D('loading').style.display = 'block';
+    D('resultsArea').style.display = 'none';
+    try {
+        var uploadData = { files: [] };
+        for (var i = 0; i < files.length; i++) {
+            uploadData.files.push({ filename: files[i].name, content: await files[i].file.text() });
+        }
+        await fetch('/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify(uploadData)
+        });
+        var r = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ filenames: files.map(function(f) { return f.name; }), mode: 'merge', language: currentLang, doc_types: ['readme', 'api', 'wiki', 'changelog'] })
+        });
+        var d = await r.json();
+        if (d.success) {
+            allDocs = d.docs;
+            showDocs();
+            showStats(d.stats);
+        } else {
+            alert(d.error || T('fail'));
+        }
+    } catch(e) {
+        alert(e.message);
+    }
+    D('loading').style.display = 'none';
+}
+
+// ============================================================
+// عرض النتائج
+// ============================================================
+
+function showStats(s) {
+    D('statFiles').textContent = s.files_analyzed || 0;
+    D('statFuncs').textContent = s.total_functions || 0;
+    D('statClasses').textContent = s.total_classes || 0;
+    D('statLines').textContent = s.total_lines || 0;
+    D('statsBar').style.display = 'flex';
+}
+
+function showDocs() {
+    var readme = [], api = [], wiki = [], changelog = [];
+    for (var k in allDocs) {
+        var v = allDocs[k];
+        if (k.toLowerCase().indexOf('readme') >= 0) readme.push(v);
+        else if (k.toLowerCase().indexOf('api') >= 0) api.push(v);
+        else if (k.toLowerCase().indexOf('wiki') >= 0) wiki.push(v);
+        else if (k.toLowerCase().indexOf('changelog') >= 0) changelog.push(v);
+    }
+    D('tab-readme').innerHTML = fmt(readme.join('<hr>') || '<p style="color:#555">' + T('noContent') + '</p>');
+    D('tab-api').innerHTML = fmt(api.join('<hr>') || '<p style="color:#555">' + T('noContent') + '</p>');
+    D('tab-wiki').innerHTML = fmt(wiki.join('<hr>') || '<p style="color:#555">' + T('noContent') + '</p>');
+    D('tab-changelog').innerHTML = fmt(changelog.join('<hr>') || '<p style="color:#555">' + T('noContent') + '</p>');
+    D('resultsArea').style.display = 'block';
+}
+
+function fmt(t) {
+    if (!t) return '';
+    return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/### (.*)/g, '<h3>$1</h3>')
+        .replace(/## (.*)/g, '<h2>$1</h2>')
+        .replace(/# (.*)/g, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/!\[.*?\]\(.*?\)/g, '')
+        .replace(/\n/g, '<br>');
+}
+
+// ============================================================
+// نسخ وتصدير
+// ============================================================
+
+function copyTab(tab) {
+    var el = D('tab-' + tab);
+    if (!el || !el.textContent) {
+        alert(T('nothingToCopy'));
+        return;
+    }
+    navigator.clipboard.writeText(el.textContent).then(function() {
+        var t = D('copyToast');
+        if (t) {
+            t.textContent = T('copySuccess');
+            t.classList.add('show');
+            setTimeout(function() { t.classList.remove('show'); }, 1500);
+        }
+    }).catch(function() {
+        alert(T('copyFailed'));
+    });
+}
+
+function dl(c, n, t) {
+    var b = new Blob([c], { type: t });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = n;
+    a.click();
+}
+
+// ============================================================
+// مساعدة
+// ============================================================
+
+function toggleHelp() {
+    var box = D('helpBox');
+    var btn = D('btnHelp');
+    if (box.style.display == 'none' || !box.style.display) {
+        box.style.display = 'block';
+        if (btn) btn.textContent = T('hideSupported');
+    } else {
+        box.style.display = 'none';
+        if (btn) btn.textContent = T('showSupported');
+    }
+}
+
+// ============================================================
+// تهيئة
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    applyLang();
+
+    var btnGenerateAll = D('btnGenerateAll');
+    if (btnGenerateAll) btnGenerateAll.onclick = generateAll;
+
+    var btnClear = D('btnClear');
+    if (btnClear) btnClear.onclick = clearAll;
+
+    var btnMD = D('btnMD');
+    if (btnMD) btnMD.onclick = async function() {
+        var r = await fetch('/export?format=markdown', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ docs: allDocs })
+        });
+        if (r.ok) dl(await r.text(), 'docs.md', 'text/markdown');
+    };
+
+    var btnHTML = D('btnHTML');
+    if (btnHTML) btnHTML.onclick = async function() {
+        var r = await fetch('/export?format=html', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ docs: allDocs })
+        });
+        if (r.ok) dl(await r.text(), 'docs.html', 'text/html');
+    };
+
+    var btnPDF = D('btnPDF');
+    if (btnPDF) btnPDF.onclick = async function() {
+        var r = await fetch('/export?format=pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ docs: allDocs })
+        });
+        if (r.ok) dl(await r.blob(), 'docs.pdf', 'application/pdf');
+        else alert(T('pdfFail'));
+    };
+
+    var btnZIP = D('btnZIP');
+    if (btnZIP) btnZIP.onclick = async function() {
+        var r = await fetch('/export?format=zip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
+            body: JSON.stringify({ docs: allDocs })
+        });
+        if (r.ok) dl(await r.blob(), 'docs.zip', 'application/zip');
+        else alert(T('zipFail'));
+    };
+
+    // تبويبات
+    document.querySelectorAll('.tab').forEach(function(t) {
+        t.onclick = function(e) {
+            if (e.target.tagName == 'SPAN') return;
+            document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+            document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); });
+            t.classList.add('active');
+            var target = D('tab-' + t.dataset.tab);
+            if (target) target.classList.add('active');
+        };
+    });
+});
+
+// ===== Auth =====
+function openAuth(tab){
+  document.getElementById('authOverlay').classList.add('show');
+  switchPopupTab(tab||'login');
+}
+function closeAuth(){
+  document.getElementById('authOverlay').classList.remove('show');
+}
+function switchPopupTab(tab){
+  var el;
+  el=document.getElementById('popup-login'); if(el)el.style.display='none';
+  el=document.getElementById('popup-register'); if(el)el.style.display='none';
+  el=document.getElementById('popup-reset'); if(el)el.style.display='none';
+  if(tab==='login'){el=document.getElementById('popup-login'); if(el)el.style.display='block';}
+  else if(tab==='register'){el=document.getElementById('popup-register'); if(el)el.style.display='block';}
+  else{el=document.getElementById('popup-reset'); if(el)el.style.display='block';}
+}
+function popupMsg(el,text,type){
+  el.textContent=text;el.className='msg '+type;
+  setTimeout(function(){el.className='msg'},4000);
+}
+async function popupLogin(){
+  var u=document.getElementById('popupLoginUser').value.trim();
+  var p=document.getElementById('popupLoginPass').value;
+  var msg=document.getElementById('popupLoginMsg');
+  var spin=document.getElementById('popupLoginSpinner');
+  if(!u||!p){popupMsg(msg,'املأ الحقول','error');return}
+  spin.style.display='block';
+  try{
+    var r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    var d=await r.json();
+    if(d.success){
+      localStorage.setItem('token',d.token);
+      document.getElementById('loginIcon').style.display='none';
+      var ud=document.getElementById('userDisplay');
+      try{var pl=JSON.parse(atob(d.token.split('.')[1]));ud.textContent='👤 '+pl.user_id;ud.style.display='inline';ud.onclick=function(e){e.stopPropagation();showLogoutPopup();};}catch(e){}
+      popupMsg(msg,'تم الدخول','success');
+      setTimeout(closeAuth,800);
+    }else{
+      var err=d.error||'خطأ';
+      if(err.includes('Invalid'))err='بيانات خاطئة';
+      popupMsg(msg,err,'error');
+    document.getElementById('popupLoginUser').value='';
+    document.getElementById('popupLoginPass').value='';
+    }
+  }catch(e){popupMsg(msg,'خطأ في الاتصال','error')}
+  spin.style.display='none';
+}
+async function popupRegister(){
+  var u=document.getElementById('popupRegUser').value.trim();
+  var e=document.getElementById('popupRegEmail').value.trim();
+  var p=document.getElementById('popupRegPass').value;
+  var msg=document.getElementById('popupRegMsg');
+  var spin=document.getElementById('popupRegSpinner');
+  if(!u||!e||!p){popupMsg(msg,'املأ الحقول','error');return}
+  if(u.length<3){popupMsg(msg,'الاسم 3 أحرف','error');return}
+  if(!e.includes('@')){popupMsg(msg,'بريد خطأ','error');return}
+  if(p.length<3){popupMsg(msg,'كلمة مرور قصيرة','error');return}
+  spin.style.display='block';
+  try{
+    var r=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,email:e,password:p})});
+    var d=await r.json();
+    if(d.success){
+      if(d.token)localStorage.setItem('token',d.token);
+      document.getElementById('loginIcon').style.display='none';
+      popupMsg(msg,'تم إنشاء الحساب','success');
+      setTimeout(closeAuth,800);
+    }else{popupMsg(msg,d.error||'خطأ','error')}
+  }catch(ex){popupMsg(msg,'خطأ في الاتصال','error')}
+  spin.style.display='none';
+}
+async function popupForgotPassword(){
+  var e=document.getElementById('popupResetEmail').value.trim();
+  var msg=document.getElementById('popupResetMsg');
+  var spin=document.getElementById('popupResetSpinner');
+  if(!e){popupMsg(msg,'أدخل بريدك','error');return}
+  spin.style.display='block';
+  try{
+    var r=await fetch('/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e})});
+    var d=await r.json();
+    if(d.success){popupMsg(msg,'تم الإرسال','success');if(d.username)document.getElementById('popupResetEmail').dataset.username=d.username;document.getElementById('resetStep1').style.display='none';document.getElementById('resetStep2').style.display='block';}
+    else popupMsg(msg,d.error||'بريد غير مسجل','error');
+  }catch(ex){popupMsg(msg,'خطأ','error')}
+  spin.style.display='none';
+}
+
+async function popupVerifyCode(){
+  var code=document.getElementById('popupResetCode').value.trim();
+  var email=document.getElementById('popupResetEmail').value.trim();
+  var user=document.getElementById('popupResetEmail').dataset.username||email.split('@')[0];
+  var msg=document.getElementById('popupResetMsg2');
+  var spin=document.getElementById('popupResetSpinner2');
+  if(!code){popupMsg(msg,'أدخل الرمز','error');return}
+  spin.style.display='block';
+  try{
+    var r=await fetch('/verify-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,code:code})});
+    var d=await r.json();
+    if(d.success){popupMsg(msg,'الرمز صحيح','success');document.getElementById('resetStep2').style.display='none';document.getElementById('resetStep3').style.display='block'}
+    else{popupMsg(msg,d.error||'الرمز غير صحيح','error')}
+  }catch(ex){popupMsg(msg,'خطأ في الاتصال','error')}
+  spin.style.display='none';
+}
+
+async function popupResetPassword(){
+  var pass=document.getElementById('popupResetNewPass').value.trim();
+  var email=document.getElementById('popupResetEmail').value.trim();
+  var user=document.getElementById('popupResetEmail').dataset.username||email.split('@')[0];
+  var msg=document.getElementById('popupResetMsg3');
+  var spin=document.getElementById('popupResetSpinner3');
+  if(!pass){popupMsg(msg,'أدخل كلمة المرور','error');return}
+  spin.style.display='block';
+  try{
+    var r=await fetch('/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:pass})});
+    var d=await r.json();
+    if(d.success){popupMsg(msg,'تم تغيير كلمة المرور بنجاح','success');setTimeout(function(){switchPopupTab('login');document.getElementById('resetStep1').style.display='block';document.getElementById('resetStep3').style.display='none'},1500)}
+    else{popupMsg(msg,d.error||'فشل','error')}
+  }catch(ex){popupMsg(msg,'خطأ في الاتصال','error')}
+  spin.style.display='none';
+}
+
+function checkAuth(){
+  var t=localStorage.getItem('token');
+  if(t){
+    document.getElementById('loginIcon').style.display='none';
+    var ud=document.getElementById('userDisplay');
+    if(ud){
+      try{var pl=JSON.parse(atob(t.split('.')[1]));ud.textContent='👤 '+pl.user_id;ud.style.display='inline';ud.onclick=function(e){e.stopPropagation();showLogoutPopup();};
+      ud.onclick=function(){
+        showLogoutPopup();
+      };}catch(e){}
+    }
+  }else{
+    document.getElementById('loginIcon').style.display='inline';
+    var ud=document.getElementById('userDisplay');if(ud)ud.style.display='none';
+  }
+}
+document.addEventListener('DOMContentLoaded',checkAuth);

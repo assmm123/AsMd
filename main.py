@@ -1,0 +1,569 @@
+import sys, os, logging, json, traceback, secrets
+from pathlib import Path
+from datetime import datetime
+from flask import Flask, make_response, render_template, request, jsonify, send_file, Response, g
+from flask_compress import Compress
+
+sys.path.insert(0, str(Path(__file__).parent))
+
+from config import HOST, PORT, DEBUG, ENV, UPLOADS_DIR, TEMP_DIR, ALLOWED_EXTENSIONS, MAX_FILE_SIZE, is_production
+from src.security.validator import detect_language
+from src.core.analyzer import analyze_file
+from src.core.generator import generate_all_docs, get_quality_report
+from src.utils.exporter import Exporter
+from src.auth.middleware import login_required, admin_required
+from src.saas.middleware import require_quota
+from src.saas.usage import get_usage, activate_tier, TIERS, TIER_PRICES, TRUST_WALLET
+from src.security.ratelimit import check_rate_limit
+
+app = Flask(__name__)
+Compress(app)
+app.secret_key = os.getenv("SECRET_KEY", "docgen-dev-secret-key")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
+
+UPLOADS_DIR.mkdir(exist_ok=True)
+
+@app.route('/pwa/manifest.json')
+def pwa_manifest():
+    return send_file('pwa/manifest.json')
+
+@app.route('/pwa/service-worker.js')
+def pwa_sw():
+    return send_file('pwa/service-worker.js', mimetype='application/javascript')
+
+TEMP_DIR.mkdir(exist_ok=True)
+
+file_store = {}
+
+def analyze_text(content, filename):
+    ext = Path(filename).suffix.lower()
+    if not ext:
+        ext = '.txt'
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False, mode='w', encoding='utf-8') as f:
+        f.write(content)
+        tmp = f.name
+    try:
+        result = analyze_file(tmp)
+    except Exception as e:
+        result = {"error": str(e), "language": detect_language(filename)}
+    os.unlink(tmp)
+    return result
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/upload', methods=['POST'])
+@login_required
+def upload_files():
+    try:
+        data = request.json
+        if not data or 'files' not in data:
+            return jsonify({"results": [], "error": "No files"}), 400
+        
+        results = []
+        for f in data['files']:
+            filename = f.get('filename', 'untitled.txt')
+            content = f.get('content', '')
+            if not content:
+                results.append({"filename": filename, "success": False, "error": "Empty file"})
+                continue
+            
+            file_store[filename] = content
+            
+            try:
+                analysis = analyze_text(content, filename)
+                if 'error' in analysis:
+                    results.append({"filename": filename, "success": False, "error": f"Analysis failed: {analysis['error']}"})
+                elif not analysis.get('functions') and not analysis.get('classes'):
+                    results.append({"filename": filename, "success": False, "error": "No code structures found"})
+                else:
+                    results.append({
+                        "filename": filename,
+                        "language": analysis.get('language', detect_language(filename)),
+                        "functions": analysis.get('functions', []),
+                        "classes": analysis.get('classes', []),
+                        "complexity": analysis.get('complexity', {}),
+                        "success": True
+                    })
+            except Exception as e:
+                results.append({"filename": filename, "success": False, "error": f"Upload error: {str(e)}"})
+        
+        return jsonify({"results": results})
+    except Exception as e:
+        logger.error(f"Upload error: {traceback.format_exc()}")
+        return jsonify({"results": [], "error": str(e)}), 500
+
+@app.route('/generate', methods=['POST'])
+@login_required
+@require_quota
+def generate_docs():
+    try:
+        data = request.json
+        filenames = data.get('filenames', [])
+        doc_types = data.get('doc_types', ['readme', 'api', 'wiki', 'changelog'])
+        language = data.get('language', 'ar')
+        mode = data.get('mode', 'merge')
+        
+        if isinstance(doc_types, str): doc_types = [doc_types]
+        if isinstance(filenames, str): filenames = [filenames]
+        
+        if mode == 'single' and len(filenames) == 1:
+            fname = filenames[0]
+            code = file_store.get(fname, '')
+            if not code:
+                return jsonify({"success": False, "error": "File not found"}), 404
+            analysis = analyze_text(code, fname)
+            if 'error' in analysis:
+                return jsonify({"success": False, "error": analysis['error']}), 400
+            docs = generate_all_docs(source_code=code, analysis=analysis, project_name=Path(fname).stem, language=language, doc_types=doc_types)
+            quality = get_quality_report(docs)
+            stats = {"total_functions": len(analysis.get('functions', [])), "total_classes": len(analysis.get('classes', [])), "total_lines": analysis.get('complexity', {}).get('total_lines', 0), "files_analyzed": 1}
+            return jsonify({"success": True, "docs": docs, "quality": quality, "stats": stats})
+        
+        all_code = ""
+        all_functions = []
+        all_classes = []
+        total_lines = 0
+        merged_names = []
+        
+        for fname in filenames:
+            code = file_store.get(fname, '')
+            if not code: continue
+            analysis = analyze_text(code, fname)
+            if 'error' in analysis: continue
+            if not analysis.get('functions') and not analysis.get('classes'): continue
+            all_code += f"\n# ===== {fname} =====\n{code}\n"
+            all_functions.extend(analysis.get("functions", []))
+            all_classes.extend(analysis.get("classes", []))
+            total_lines += analysis.get("complexity", {}).get("total_lines", 0)
+            merged_names.append(Path(fname).stem)
+        
+        if not all_code:
+            return jsonify({"success": False, "error": "No valid files to analyze"}), 400
+        
+        project_name = " + ".join(merged_names[:3])
+        if len(merged_names) > 3:
+            project_name += f" +{len(merged_names)-3} more"
+        
+        all_analysis = {"functions": all_functions, "classes": all_classes, "complexity": {"total_lines": total_lines}, "language": "Multi-file"}
+        docs = generate_all_docs(source_code=all_code, analysis=all_analysis, project_name=project_name, language=language, doc_types=doc_types)
+        quality = get_quality_report(docs)
+        stats = {"total_functions": len(all_functions), "total_classes": len(all_classes), "total_lines": total_lines, "files_analyzed": len(merged_names)}
+        
+        return jsonify({"success": True, "docs": docs, "quality": quality, "stats": stats})
+    
+    except Exception as e:
+        logger.error(f"Generate error: {traceback.format_exc()}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/export', methods=['POST'])
+@login_required
+def export_docs():
+    try:
+        data = request.json
+        docs = data.get('docs', {})
+        fmt = request.args.get('format', 'zip')
+        
+        if not docs:
+            return jsonify({"error": "No docs"}), 400
+        
+        exporter = Exporter(docs, {"exported_at": datetime.now().isoformat()})
+        
+        if fmt == 'zip':
+            result = exporter.export_zip()
+        elif fmt == 'pdf':
+            result = exporter.export_pdf()
+        elif fmt == 'markdown':
+            return Response(exporter.export_all_markdown(), mimetype='text/markdown', headers={'Content-Disposition': 'attachment; filename=docs.md'})
+        elif fmt == 'html':
+            return Response(exporter.export_all_html(), mimetype='text/html', headers={'Content-Disposition': 'attachment; filename=docs.html'})
+        else:
+            return jsonify({"error": f"Unknown format: {fmt}"}), 400
+        
+        if result.get('success'):
+            return send_file(result['path'], as_attachment=True, download_name=f"docs.{fmt}")
+        return jsonify({"error": result.get('error', 'Export failed')}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/github', methods=['POST'])
+@login_required
+@require_quota
+def analyze_github():
+    data = request.json
+    url = data.get('url', '')
+    if not url:
+        return jsonify({"error": "URL required"}), 400
+    from src.integrations.github import GitHubAnalyzer
+    analyzer = GitHubAnalyzer(url)
+    result = analyzer.analyze()
+    return jsonify(result), 200 if result.get('success') else 400
+
+@app.route('/github-page')
+def github_page():
+    return render_template('github.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == "POST":
+        ip = request.remote_addr or '127.0.0.1'
+        allowed, msg = check_rate_limit(ip)
+        if not allowed:
+            return jsonify({"success": False, "error": f"Too many attempts. {msg}"}), 429
+        
+        data = request.json
+        username = data.get("username", "")
+        password = data.get("password", "")
+        from src.auth.models import db
+        from src.auth.jwt import create_token
+        user = db.authenticate(username, password)
+        # إذا فشل، جرب البحث بالايميل
+        if not user:
+            for uname, u in db.users.items():
+                if u.get('email') == username:
+                    user = db.authenticate(uname, password)
+                    break
+        if user:
+            token = create_token(username)
+            return jsonify({"success": True, "token": token})
+        return jsonify({"success": False, "error": "Invalid credentials"}), 401
+    return render_template("index.html")
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    email = data.get('email', '').strip()
+    
+    from src.auth.validator import validate_username, validate_email, validate_password
+    valid, msg = validate_username(username)
+    if not valid: return jsonify({'success': False, 'error': msg}), 400
+    valid, msg = validate_email(email)
+    if not valid: return jsonify({'success': False, 'error': msg}), 400
+    valid, msg = validate_password(password)
+    if not valid: return jsonify({'success': False, 'error': msg}), 400
+    
+    from src.auth.models import db
+    if db.create_user(username, password, email):
+        import random, string
+        code = ''.join(random.choices(string.digits, k=6))
+        user = db.get_user(username)
+        if user:
+            user['verification_code'] = code
+            from src.auth.models import save_db
+            save_db()
+            from src.auth.email import send_verification
+            send_verification(email, username, code)
+        return jsonify({'success': True, 'message': 'Check your email for verification code'})
+    return jsonify({'success': False, 'error': 'User exists'}), 400
+
+@app.route('/google-login', methods=['POST'])
+def google_login():
+    data = request.json
+    google_id = data.get('google_id', '')
+    email = data.get('email', '')
+    name = data.get('name', '')
+    from src.auth.models import db
+    from src.auth.jwt import create_token
+    user = db.create_google_user(google_id, email, name)
+    token = create_token(user['username'])
+    return jsonify({'success': True, 'token': token, 'user': user})
+
+@app.route('/stats')
+def system_stats():
+    try:
+        from src.security.monitor import monitor
+        return jsonify(monitor.get_stats())
+    except:
+        return jsonify({"uptime": "N/A"})
+
+@app.route('/verify', methods=['POST'])
+def verify_email():
+    data = request.json
+    username = data.get('username', '')
+    code = data.get('code', '')
+    from src.auth.models import db
+    user = db.get_user(username)
+    if user and user.get('verification_code') == code:
+        user['verified'] = True
+        from src.auth.models import save_db
+        save_db()
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Invalid code'}), 400
+
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.json
+    email = data.get('email', '')
+    from src.auth.models import db
+    for username, user in db.users.items():
+        if user.get('email') == email:
+            import random, string
+            code = ''.join(random.choices(string.digits, k=6))
+            user['verification_code'] = code
+            from src.auth.models import save_db
+            save_db()
+            from src.auth.email import send_reset_password
+            send_reset_password(email, username, code)
+            return jsonify({'success': True, 'message': 'Reset code sent', 'username': username})
+    return jsonify({'success': False, 'error': 'Email not found'}), 400
+
+@app.route('/auth')
+def auth_page():
+    return render_template('index.html')
+
+@app.route('/app')
+def app_page():
+    return render_template('index.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    resp = make_response(render_template('auth.html'))
+    resp.delete_cookie('token')
+    return resp
+
+@app.route('/docs')
+def docs_page():
+    return render_template('docs.html')
+
+@app.route('/me')
+@login_required
+def get_me():
+    usage = get_usage(g.user_id)
+    return jsonify({
+        'username': g.user.get('username', ''),
+        'email': g.user.get('email', ''),
+        'role': g.user.get('role', 'user'),
+        'is_verified': g.user.get('verified', False),
+        'usage': usage
+    })
+
+@app.route('/reset-password', methods=['POST'])
+def reset_password():
+    if request.is_json:
+        data = request.json
+    else:
+        data = request.form
+    username = data.get('username', '')
+    code = data.get('code', '')
+    new_password = data.get('password', '')
+    
+    from src.auth.models import db
+    user = db.get_user(username)
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 400
+    # Allow reset if code matches OR if already verified (code was correct in verify-code step)
+    if user.get('verification_code') != code and not user.get('_verified_reset'):
+        return jsonify({'success': False, 'error': 'Invalid code'}), 400
+    
+    from src.auth.models import hash_password
+    user['password'] = hash_password(new_password)
+    user['verification_code'] = None
+    user['_verified_reset'] = False
+    from src.auth.models import save_db
+    save_db()
+    return jsonify({'success': True, 'message': 'Password changed successfully'})
+
+# ============================================================
+# SaaS Routes
+# ============================================================
+
+@app.route('/pricing')
+def pricing_page():
+    """صفحة الأسعار والاشتراكات"""
+    return jsonify({
+        "wallet": TRUST_WALLET,
+        "tiers": {
+            "basic": {"price": 5, "limit": 20, "label": "Basic"},
+            "pro": {"price": 15, "limit": 50, "label": "Pro"},
+            "unlimited": {"price": 30, "limit": 100, "label": "Unlimited"},
+        },
+        "instructions": "Send USDT/TRX to the wallet above, then submit your txid to upgrade."
+    })
+
+@app.route('/upgrade', methods=['POST'])
+@login_required
+def upgrade_account():
+    """ترقية الحساب باستخدام txid"""
+    data = request.json
+    txid = data.get('txid', '').strip()
+    tier = data.get('tier', '').strip()
+    
+    if not txid:
+        return jsonify({"success": False, "error": "Transaction ID required"}), 400
+    
+    if tier not in TIER_PRICES:
+        return jsonify({"success": False, "error": f"Invalid tier. Available: {', '.join(TIER_PRICES.keys())}"}), 400
+    
+    # التحقق من أن txid غير مستخدم سابقاً
+    from src.auth.models import db
+    for user in db.get_all_users():
+        if user.get('last_txid') == txid:
+            return jsonify({"success": False, "error": "This txid has already been used"}), 400
+    
+    # تفعيل الاشتراك
+    success = activate_tier(g.user_id, tier, duration_days=30)
+    if success:
+        g.user['last_txid'] = txid
+        from src.auth.models import save_db
+        save_db()
+        
+        from src.auth.models import generate_activation_code
+        code = generate_activation_code(tier)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Account upgraded to {tier} for 30 days",
+            "tier": tier,
+            "activation_code": code,
+            "usage": get_usage(g.user_id)
+        })
+    
+    return jsonify({"success": False, "error": "Upgrade failed"}), 500
+
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_panel():
+    """لوحة تحكم المدير"""
+    from src.auth.models import db, save_db
+    from src.saas.usage import TIERS, TIER_PRICES
+    
+    users = db.get_all_users()
+    total_users = len(users)
+    total_requests_today = sum(u.get('daily_requests', 0) for u in users)
+    
+    users_by_tier = {}
+    for u in users:
+        t = u.get('tier', 'free')
+        users_by_tier[t] = users_by_tier.get(t, 0) + 1
+    
+    return jsonify({
+        "total_users": total_users,
+        "total_requests_today": total_requests_today,
+        "users_by_tier": users_by_tier,
+        "users": [{
+            "username": u.get('username'),
+            "email": u.get('email'),
+            "tier": u.get('tier', 'free'),
+            "daily_requests": u.get('daily_requests', 0),
+            "expires_at": u.get('expires_at'),
+            "role": u.get('role', 'user'),
+        } for u in users],
+        "tiers": TIERS,
+        "prices": TIER_PRICES,
+        "wallet": TRUST_WALLET,
+    })
+
+
+@app.route('/test-generator')
+def test_generator_page():
+    return render_template('test_generator.html')
+
+
+@app.route('/api/test-generate', methods=['POST'])
+def api_test_generate():
+    from src.testing.emperor.emperor import Emperor
+    target = request.json.get('target', '.') if request.is_json else '.'
+    e = Emperor(quiet=True)
+    try:
+        e.cmd_test([target])
+        stats = e.memory.get_statistics()
+        top = e.memory.get_top_errors(5)
+        top_html = "<br>".join(f"{t['type']}: {t['count']}x" for t in top)
+        return jsonify({
+            "success": True,
+            "overview": f"<h3>Test Generation Complete</h3><p>Files: {stats['files_tracked']}</p><p>Tests generated: {stats['total_tests_generated']}</p><p>Success rate: {stats['success_rate']}%</p>",
+            "functions": f"<p>Total fixes: {stats['total_fixes_applied']}</p><p>Failed: {stats['total_fixes_failed']}</p>",
+            "tests": f"<p>Error patterns: {stats['total_patterns']}</p>",
+            "healing": f"<p>Top errors:</p><p>{top_html}</p>",
+            "report": f"<p>Sessions: {stats['total_runs']}</p><p>Rate: {stats['success_rate']}%</p>"
+        })
+    except Exception as ex:
+        return jsonify({"success": False, "error": str(ex)})
+
+@app.route('/api/test-fix', methods=['POST'])
+def api_test_fix():
+    from src.testing.emperor.emperor import Emperor
+    target = request.json.get('target', 'tests') if request.is_json else 'tests'
+    e = Emperor(quiet=True)
+    try:
+        e.cmd_fix([target])
+        stats = e.memory.get_statistics()
+        return jsonify({
+            "success": True,
+            "overview": f"<h3>Fix Complete</h3><p>Files checked: {stats['files_tracked']}</p><p>Fixes applied: {stats['total_fixes_applied']}</p><p>Success rate: {stats['success_rate']}%</p>",
+            "functions": f"<p>Error patterns: {stats['total_patterns']}</p>",
+            "tests": f"<p>Total fixes: {stats['total_fixes_applied']}</p><p>Failed: {stats['total_fixes_failed']}</p>",
+            "healing": f"<p>Fixes applied: {stats['total_fixes_applied']}</p>",
+            "report": f"<p>Sessions: {stats['total_runs']}</p>"
+        })
+    except Exception as ex:
+        return jsonify({"success": False, "error": str(ex)})
+
+@app.route('/api/test-report', methods=['GET'])
+def api_test_report():
+    from src.testing.emperor.emperor import Emperor
+    e = Emperor(quiet=True)
+    try:
+        stats = e.memory.get_statistics()
+        top = e.memory.get_top_errors(5)
+        top_html = "<br>".join(f"{t['type']}: {t['count']}x" for t in top)
+        return jsonify({
+            "success": True,
+            "overview": f"<h3>Report</h3><p>Sessions: {stats['total_runs']}</p><p>Tests: {stats['total_tests_generated']}</p><p>Rate: {stats['success_rate']}%</p>",
+            "functions": f"<p>Patterns: {stats['total_patterns']}</p><p>Files: {stats['files_tracked']}</p>",
+            "tests": f"<p>Fixes: {stats['total_fixes_applied']}</p><p>Failed: {stats['total_fixes_failed']}</p>",
+            "healing": f"<p>{top_html}</p>",
+            "report": f"<p>Memory: {stats.get('memory_file_size_kb',0)}KB</p><p>Entries: {stats['total_entries']}</p>"
+        })
+    except Exception as ex:
+        return jsonify({"success": False, "error": str(ex)})
+
+
+
+@app.route('/commands-doc')
+def commands_doc():
+    return render_template('commands_doc.html')
+
+@app.route('/commands-test')
+def commands_test():
+    return render_template('commands_test.html')
+
+
+@app.route('/verify-code', methods=['POST'])
+def verify_code():
+    data = request.json if request.is_json else request.form
+    username = data.get('username', '')
+    code = data.get('code', '')
+    from src.auth.models import db
+    user = db.get_user(username)
+    if not user:
+        return jsonify({'success': False, 'error': 'User not found'}), 400
+    if user.get('verification_code') != code:
+        return jsonify({'success': False, 'error': 'Invalid code'}), 400
+    # Mark as verified so reset-password works without code
+    user['_verified_reset'] = True
+    from src.auth.models import save_db
+    save_db()
+    return jsonify({'success': True})
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Not found"}), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Server error"}), 500
+
+from src.saas.owner_routes import register_owner_routes
+register_owner_routes(app)
+
+if __name__ == '__main__':
+    print(f"\nDoc Generator: http://{HOST}:{PORT}\n")
+    app.run(host=HOST, port=PORT, debug=False, use_reloader=False)

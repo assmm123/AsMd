@@ -1,0 +1,38 @@
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;min-height:100vh}
+.sidebar{width:220px;background:#1a1a2e;border-left:1px solid #333;padding:20px 0;position:fixed;top:0;right:0;bottom:0;overflow-y:auto;z-index:100}
+.sidebar h2{color:#7c3aed;text-align:center;margin-bottom:20px;font-size:1.1em}
+.sidebar a{display:block;padding:12px 20px;color:#888;text-decoration:none;font-size:14px;cursor:pointer;transition:all .2s}
+.sidebar a:hover,.sidebar a.active{background:#2d2d3f;color:#a78bfa;border-right:3px solid #7c3aed}
+.main{margin-right:220px;padding:25px;width:100%}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.card{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin-bottom:15px}
+.card h3{color:#a78bfa;margin-bottom:15px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-bottom:20px}
+.stat-card{background:#1a1a2e;border:1px solid #333;border-radius:10px;padding:20px;text-align:center}
+.stat-card .num{font-size:2em;color:#7c3aed;font-weight:bold}
+.stat-card .lbl{color:#888;font-size:12px;margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#7c3aed;padding:10px;text-align:right;color:#fff}
+td{padding:8px;border:1px solid #333}
+tr:nth-child(odd){background:#1a1a2e}
+input,textarea,select{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:14px}
+button{padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin:5px}
+button:hover{background:#6d28d9}
+button.danger{background:#ef4444}
+button.success{background:#059669}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px}
+.badge-free{background:#1e3a5f;color:#93c5fd}
+.badge-basic{background:#064e3b;color:#6ee7b7}
+.badge-pro{background:#5b21b6;color:#c4b5fd}
+.badge-unlimited{background:#7f1d1d;color:#fca5a5}
+.badge-admin{background:#7c3aed;color:#fff}
+.msg{display:none;padding:10px;border-radius:6px;margin:10px 0;font-size:13px;text-align:center}
+.msg.success{background:#064e3b;color:#6ee7b7;display:block}
+.msg.error{background:#7f1d1d;color:#fca5a5;display:block}
+.login-box{max-width:400px;margin:100px auto;background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:30px;text-align:center}
+.login-box h1{color:#7c3aed;margin-bottom:20px}
+.login-box input{width:100%;padding:14px;margin:10px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:16px}
+.chart-container{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin:15px 0}
+@media(max-width:768px){.sidebar{width:100%;height:auto;position:relative}.sidebar a{display:inline-block;padding:8px 12px;font-size:12px}.main{margin-right:0}}

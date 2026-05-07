@@ -1,0 +1,82 @@
+"""اختبار إنتاجي لـ main.py - المنطق الحقيقي"""
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+def test_all_imports():
+    """كل الاستيرادات في main.py يجب أن تعمل"""
+    from config import HOST, PORT, DEBUG, ENV, UPLOADS_DIR, TEMP_DIR
+    from src.security.validator import detect_language
+    from src.core.analyzer import analyze_file
+    from src.core.generator import generate_all_docs, get_quality_report
+    from src.utils.exporter import Exporter
+    from src.integrations.github import GitHubAnalyzer
+    from src.auth.models import db
+    from src.auth.jwt import create_token, verify_token
+    assert True
+
+def test_app_creates():
+    """التطبيق ينشأ بدون أخطاء"""
+    from main import app
+    assert app is not None
+    assert app.name is not None
+
+def test_routes_exist():
+    """المسارات الأساسية موجودة"""
+    from main import app
+    rules = [rule.rule for rule in app.url_map.iter_rules()]
+    required = ['/', '/docs', '/github-page', '/auth', '/app', '/stats',
+                '/upload', '/generate', '/export', '/github',
+                '/login', '/register', '/verify', '/logout',
+                '/forgot-password', '/reset-password', '/google-login']
+    for r in required:
+        assert r in rules, f"Route {r} missing"
+
+def test_client_get_root():
+    """الصفحة الرئيسية تستجيب 200"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.get('/')
+        assert resp.status_code == 200
+
+def test_client_get_docs():
+    """صفحة التوثيق تستجيب 200"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.get('/docs')
+        assert resp.status_code == 200
+
+def test_client_get_github_page():
+    """صفحة GitHub تستجيب 200"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.get('/github-page')
+        assert resp.status_code == 200
+
+def test_client_get_stats():
+    """صفحة الإحصائيات تستجيب 200"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.get('/stats')
+        assert resp.status_code == 200
+
+def test_generate_requires_auth():
+    """/generate يرفض بدون مصادقة"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.post('/generate', json={})
+        assert resp.status_code in [400, 401], f"Expected 400 or 401, got {resp.status_code}"
+
+def test_export_requires_auth():
+    """/export يرفض بدون مصادقة"""
+    from main import app
+    with app.test_client() as client:
+        resp = client.post('/export', json={})
+        assert resp.status_code in [400, 401], f"Expected 400 or 401, got {resp.status_code}"

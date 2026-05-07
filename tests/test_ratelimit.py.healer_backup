@@ -1,0 +1,34 @@
+"""Tests for ratelimit.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.security.ratelimit import *
+from src.security.ratelimit import RateLimiter
+
+class TestGet_limiter:
+    def test_exists(self):
+        assert callable(get_limiter)
+
+class TestCheck_rate_limit:
+    def test_exists(self):
+        assert callable(check_rate_limit)
+
+    def test_valid(self):
+        result = check_rate_limit(None)
+        assert result is not None
+
+class TestRateLimiter:
+    def test_create(self):
+        obj = RateLimiter()
+        assert obj is not None
+
+    def test_check_exists(self):
+        obj = RateLimiter()
+        assert hasattr(obj, "check")
+
+    def test_get_stats_exists(self):
+        obj = RateLimiter()
+        assert hasattr(obj, "get_stats")
+
+    def test_reset_exists(self):
+        obj = RateLimiter()
+        assert hasattr(obj, "reset")

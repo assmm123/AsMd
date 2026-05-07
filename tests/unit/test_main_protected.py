@@ -1,0 +1,81 @@
+"""اختبار حماية المسارات في main.py - المنطق الحقيقي"""
+
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+from main import app
+
+
+class TestPublicRoutes:
+    """اختبارات المسارات المفتوحة"""
+
+    def test_root_returns_200(self):
+        """الصفحة الرئيسية تستجيب 200"""
+        with app.test_client() as client:
+            resp = client.get('/')
+            assert resp.status_code == 200
+
+    def test_docs_returns_200(self):
+        """صفحة التوثيق تستجيب 200"""
+        with app.test_client() as client:
+            resp = client.get('/docs')
+            assert resp.status_code == 200
+
+    def test_github_page_returns_200(self):
+        """صفحة GitHub تستجيب 200"""
+        with app.test_client() as client:
+            resp = client.get('/github-page')
+            assert resp.status_code == 200
+
+        """صفحة الدخول تستجيب 200"""
+        with app.test_client() as client:
+            resp = client.get('/login')
+            assert resp.status_code == 200
+
+
+class TestProtectedRoutes:
+    """اختبارات المسارات المحمية"""
+
+    def test_upload_rejects_no_auth(self):
+        """/upload يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.post('/upload', json={})
+            assert resp.status_code == 401
+
+    def test_generate_rejects_no_auth(self):
+        """/generate يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.post('/generate', json={})
+            assert resp.status_code == 401
+
+    def test_export_rejects_no_auth(self):
+        """/export يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.post('/export', json={})
+            assert resp.status_code == 401
+
+    def test_github_rejects_no_auth(self):
+        """/github يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.post('/github', json={})
+            assert resp.status_code == 401
+
+    def test_logout_rejects_no_auth(self):
+        """/logout يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.get('/logout')
+            assert resp.status_code == 401
+
+    def test_me_rejects_no_auth(self):
+        """/me يرفض بدون JWT"""
+        with app.test_client() as client:
+            resp = client.get('/me')
+            assert resp.status_code == 401

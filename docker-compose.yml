@@ -1,0 +1,12 @@
+version: '3'
+services:
+  docgen:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DOCGEN_ENV=prod
+    restart: unless-stopped

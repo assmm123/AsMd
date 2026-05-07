@@ -1,0 +1,91 @@
+"""اختبار ملفات الواجهة - المنطق الحقيقي"""
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent.parent.parent
+
+
+class TestMainCSS:
+    """اختبارات main.css"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'static/css/main.css')
+
+    def test_contains_docgen_styles(self):
+        """يحتوي على أنماط DocGen"""
+        content = open(BASE_DIR / 'static/css/main.css').read()
+        assert '#0f0f1a' in content
+        assert '#7c3aed' in content
+        assert '.btn-primary' in content
+        assert '.dropzone' in content
+
+
+class TestIndexHTML:
+    """اختبارات index.html"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'templates/index.html')
+
+    def test_loads_main_css(self):
+        """يحمل main.css"""
+        content = open(BASE_DIR / 'templates/index.html').read()
+        assert 'main.css' in content
+
+    def test_loads_app_js_once(self):
+        """يحمل app.js مرة واحدة فقط"""
+        content = open(BASE_DIR / 'templates/index.html').read()
+        count = content.count('app.js')
+        assert count == 1, f'Expected 1 app.js, found {count}'
+
+    def test_no_inline_style_tag(self):
+        """لا يحتوي على <style> كبير"""
+        content = open(BASE_DIR / 'templates/index.html').read()
+        assert '<style>' not in content
+
+    def test_no_duplicate_pwa(self):
+        """لا يحتوي على كود PWA مكرر"""
+        content = open(BASE_DIR / 'templates/index.html').read()
+        count = content.count('function installApp')
+        assert count == 0, 'PWA code moved to app.js'
+
+
+class TestGithubHTML:
+    """اختبارات github.html"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'templates/github.html')
+
+    def test_loads_main_css(self):
+        """يحمل main.css"""
+        content = open(BASE_DIR / 'templates/github.html').read()
+        assert 'main.css' in content
+
+
+class TestLoginHTML:
+    """اختبارات login.html"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'templates/login.html')
+
+    def test_loads_main_css(self):
+        """يحمل main.css"""
+        content = open(BASE_DIR / 'templates/login.html').read()
+        assert 'main.css' in content
+
+
+class TestDocsHTML:
+    """اختبارات docs.html"""
+
+    def test_file_exists(self):
+        """الملف موجود"""
+        assert os.path.exists(BASE_DIR / 'templates/docs.html')
+
+    def test_loads_main_css(self):
+        """يحمل main.css"""
+        content = open(BASE_DIR / 'templates/docs.html').read()
+        assert 'main.css' in content

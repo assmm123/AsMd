@@ -1,0 +1,58 @@
+"""Tests for encryption.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.security.encryption import *
+from src.security.encryption import SimpleEncryption, KeyVault
+
+class TestHash_data:
+    def test_exists(self):
+        assert callable(hash_data)
+
+    def test_valid(self):
+        result = hash_data("test_data")
+        assert result is not None
+        assert len(result) == 64
+
+class TestVerify_hash:
+    def test_exists(self):
+        assert callable(verify_hash)
+
+    def test_valid(self):
+        h = hash_data("test_data")
+        result = verify_hash("test_data", h)
+        assert result == True
+
+class TestGenerate_token:
+    def test_exists(self):
+        assert callable(generate_token)
+
+    def test_valid(self):
+        result = generate_token(16)
+        assert result is not None
+        assert len(result) == 16
+
+class TestSimpleEncryption:
+    def test_create(self):
+        obj = SimpleEncryption()
+        assert obj is not None
+
+    def test_encrypt_exists(self):
+        obj = SimpleEncryption()
+        assert hasattr(obj, "encrypt")
+
+    def test_decrypt_exists(self):
+        obj = SimpleEncryption()
+        assert hasattr(obj, "decrypt")
+
+class TestKeyVault:
+    def test_create(self):
+        obj = KeyVault()
+        assert obj is not None
+
+    def test_store_exists(self):
+        obj = KeyVault()
+        assert hasattr(obj, "store")
+
+    def test_retrieve_exists(self):
+        obj = KeyVault()
+        assert hasattr(obj, "retrieve")

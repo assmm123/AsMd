@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - Documentation</title>
+<link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body style="padding:20px;max-width:600px;margin:0 auto">
+<a href="/app" class="back">← Back</a>
+<h1>DocGen Setup Guide</h1>
+
+<h2 style="color:#a78bfa;margin-top:25px">1. Install</h2>
+<pre><code>git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd Dokle
+pip install -r requirements.txt</code></pre>
+
+<h2 style="color:#a78bfa;margin-top:25px">2. Run</h2>
+<pre><code>python main.py
+# Open http://127.0.0.1:5000</code></pre>
+
+<h2 style="color:#a78bfa;margin-top:25px">3. CLI Commands</h2>
+<pre><code>python cli.py analyze app.py
+python cli.py generate src/
+python cli.py github user/repo</code></pre>
+
+<h2 style="color:#a78bfa;margin-top:25px">4. Docker</h2>
+<pre><code>docker build -t docgen .
+docker run -p 5000:5000 docgen</code></pre>
+
+<h2 style="color:#a78bfa;margin-top:25px">5. Install as App</h2>
+<p>Open in Chrome → Menu → Add to Home Screen</p>
+
+<h2 style="color:#a78bfa;margin-top:25px">Links</h2>
+<p><a href="https://github.com/YOUR_USERNAME/YOUR_REPO">GitHub Repository</a></p>
+</body>
+</html>

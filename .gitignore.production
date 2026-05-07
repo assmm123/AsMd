@@ -1,0 +1,26 @@
+# الأسرار والبيانات الحساسة
+.env
+*.db
+users.json
+openrouter_keys.txt
+
+# مجلدات البيانات والتشغيل
+logs/
+backups/
+data/
+temp/
+uploads/
+
+# ملفات Python المترجمة
+__pycache__/
+*.pyc
+*.pyo
+
+# اختبارات
+.pytest_cache/
+htmlcov/
+.coverage
+
+# نظام
+.DS_Store
+Thumbs.db

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - حساب</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px}
+.card{background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:25px;width:100%;max-width:400px}
+h1{color:#7c3aed;text-align:center;margin-bottom:5px}
+.subtitle{color:#888;text-align:center;margin-bottom:15px;font-size:13px}
+.tabs{display:flex;margin-bottom:20px;background:#0f0f1a;border-radius:8px;padding:3px}
+.tab{flex:1;padding:10px;border:none;background:transparent;color:#888;cursor:pointer;font-size:13px;border-radius:6px}
+.tab.active{background:#7c3aed;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:16px;display:block}
+button{width:100%;padding:12px;margin-top:8px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;display:block}
+button:disabled{opacity:0.5;cursor:not-allowed}
+.msg{display:none;padding:10px;border-radius:6px;margin-top:10px;font-size:13px;text-align:center}
+.msg.error{background:#7f1d1d;color:#fca5a5;display:block}
+.msg.success{background:#064e3b;color:#6ee7b7;display:block}
+.link{color:#888;display:block;text-align:center;margin-top:15px;font-size:13px;text-decoration:none;cursor:pointer}
+.spinner{display:none;width:20px;height:20px;border:2px solid #333;border-top:2px solid #7c3aed;border-radius:50%;animation:spin 1s linear infinite;margin:10px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>📄 DocGen</h1>
+<p class="subtitle">توثيق احترافي بالذكاء الاصطناعي</p>
+
+<div class="tabs">
+<button class="tab active" id="tabLoginBtn" onclick="switchTab('login')">دخول</button>
+<button class="tab" id="tabRegBtn" onclick="switchTab('register')">حساب جديد</button>
+</div>
+
+<!-- تبويب الدخول -->
+<div class="tab-content active" id="tab-login">
+<form id="loginForm" onsubmit="return doLogin(event)">
+<input type="text" id="loginUser" placeholder="اسم المستخدم" required>
+<input type="password" id="loginPass" placeholder="كلمة المرور" required>
+<button type="submit" id="loginBtn">دخول</button>
+</form>
+<div class="spinner" id="loginSpinner"></div>
+<p class="msg" id="loginMsg"></p>
+<span class="link" onclick="switchTab('reset')">نسيت كلمة المرور؟</span>
+</div>
+
+<!-- تبويب التسجيل -->
+<div class="tab-content" id="tab-register">
+<form id="regForm" onsubmit="return doRegister(event)">
+<input type="text" id="regUser" placeholder="اسم المستخدم" required>
+<input type="email" id="regEmail" placeholder="البريد الإلكتروني" required>
+<input type="password" id="regPass" placeholder="كلمة المرور" required>
+<button type="submit" id="regBtn">إنشاء حساب</button>
+</form>
+<div class="spinner" id="regSpinner"></div>
+<p class="msg" id="regMsg"></p>
+</div>
+
+<!-- تبويب استعادة -->
+<div class="tab-content" id="tab-reset">
+<p style="color:#888;font-size:13px;margin-bottom:10px;text-align:center">أدخل بريدك الإلكتروني</p>
+<input type="email" id="resetEmail" placeholder="البريد الإلكتروني">
+<button onclick="doForgotPassword()" id="resetBtn">إرسال الرمز</button>
+<div class="spinner" id="resetSpinner"></div>
+<p class="msg" id="resetMsg"></p>
+<span class="link" onclick="switchTab('login')">العودة للدخول</span>
+</div>
+
+<a href="/" class="link">العودة للرئيسية</a>
+</div>
+
+<script>
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+  document.querySelectorAll('.msg').forEach(function(m){m.className='msg'});
+  if(tab==='login'){
+    document.getElementById('tab-login').classList.add('active');
+    document.getElementById('tabLoginBtn').classList.add('active');
+  }else if(tab==='register'){
+    document.getElementById('tab-register').classList.add('active');
+    document.getElementById('tabRegBtn').classList.add('active');
+  }else if(tab==='reset'){
+    document.getElementById('tab-reset').classList.add('active');
+  }
+}
+
+function showMsg(id,text,type){
+  var el=document.getElementById(id);
+  el.textContent=text;el.className='msg '+(type||'error');
+  setTimeout(function(){el.className='msg'},4000);
+}
+
+function setLoading(formId, btnId, spinnerId, loading){
+  document.getElementById(btnId).disabled = loading;
+  document.getElementById(spinnerId).style.display = loading ? 'block' : 'none';
+}
+
+// ====== تسجيل الدخول ======
+async function doLogin(e){
+  e.preventDefault();
+  var u = document.getElementById('loginUser').value.trim();
+  var p = document.getElementById('loginPass').value;
+  if(!u||!p){showMsg('loginMsg','املأ جميع الحقول','error');return}
+  
+  setLoading('loginForm','loginBtn','loginSpinner',true);
+  showMsg('loginMsg','جاري الدخول...','success');
+  
+  try{
+    var r = await fetch('/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u, password:p})
+    });
+    var d = await r.json();
+    
+    if(d.success){
+      showMsg('loginMsg','تم الدخول بنجاح','success');
+      setTimeout(function(){ window.location.replace('/'); }, 1000);
+    }else{
+      showMsg('loginMsg',d.error||'بيانات خاطئة','error');
+      setLoading('loginForm','loginBtn','loginSpinner',false);
+    }
+  }catch(ex){
+    showMsg('loginMsg','خطأ في الاتصال','error');
+    setLoading('loginForm','loginBtn','loginSpinner',false);
+  }
+}
+
+// ====== إنشاء حساب ======
+async function doRegister(e){
+  e.preventDefault();
+  var u = document.getElementById('regUser').value.trim();
+  var e_ = document.getElementById('regEmail').value.trim();
+  var p = document.getElementById('regPass').value;
+  if(!u||!e_||!p){showMsg('regMsg','املأ جميع الحقول','error');return}
+  
+  setLoading('regForm','regBtn','regSpinner',true);
+  showMsg('regMsg','جاري إنشاء الحساب...','success');
+  
+  try{
+    var r = await fetch('/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u, email:e_, password:p})
+    });
+    var d = await r.json();
+    
+    if(d.success){
+      showMsg('regMsg','تم إنشاء الحساب بنجاح','success');
+      setTimeout(function(){ window.location.replace('/'); }, 1000);
+    }else{
+      showMsg('regMsg',d.error||'خطأ في التسجيل','error');
+      setLoading('regForm','regBtn','regSpinner',false);
+    }
+  }catch(ex){
+    showMsg('regMsg','خطأ في الاتصال','error');
+    setLoading('regForm','regBtn','regSpinner',false);
+  }
+}
+
+// ====== استعادة كلمة المرور ======
+async function doForgotPassword(){
+  var e_ = document.getElementById('resetEmail').value.trim();
+  if(!e_){showMsg('resetMsg','أدخل بريدك','error');return}
+  
+  setLoading(null,'resetBtn','resetSpinner',true);
+  
+  try{
+    var r = await fetch('/forgot-password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:e_})
+    });
+    var d = await r.json();
+    if(d.success){showMsg('resetMsg','تم الإرسال','success')}
+    else{showMsg('resetMsg',d.error||'خطأ','error')}
+  }catch(ex){showMsg('resetMsg','خطأ في الاتصال','error')}
+  
+  setLoading(null,'resetBtn','resetSpinner',false);
+}
+</script>
+</body>
+</html>

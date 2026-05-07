@@ -1,0 +1,28 @@
+"""Tests for cli.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from cli import *
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+class TestDoAnalyze:
+    def test_exists(self):
+        assert callable(do_analyze)
+
+class TestDoDocs:
+    def test_exists(self):
+        assert callable(do_docs)
+
+class TestDoProduction:
+    def test_exists(self):
+        assert callable(do_production)
+
+class TestDoAll:
+    def test_exists(self):
+        assert callable(do_all)

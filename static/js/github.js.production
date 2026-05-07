@@ -1,0 +1,289 @@
+/**
+ * DocGen - GitHub Analyzer
+ * Arabic / English support
+ */
+
+// ============================================================
+// اللغة
+// ============================================================
+
+var currentLang = localStorage.getItem('docgen_lang') || 'ar';
+
+var GH_TRANSLATIONS = {
+    ar: {
+        title: 'محلل GitHub',
+        subtitle: 'حلل أي مستودع GitHub عام',
+        enterUrl: 'https://github.com/user/repo',
+        hint: 'أدخل رابط كامل أو user/repo فقط',
+        analyze: 'تحليل المستودع',
+        generating: 'جاري التوليد...',
+        generated: 'تم التوليد بنجاح!',
+        analyzed: 'تم التحليل: ',
+        readme: 'README',
+        api: 'API',
+        wiki: 'Wiki',
+        changelog: 'Changelog',
+        md: '📥 MD',
+        html: '🌐 HTML',
+        pdf: '📕 PDF',
+        zip: '📦 ZIP',
+        copied: '✓ تم النسخ!',
+        notFound: 'المستودع غير موجود. تأكد من الرابط.',
+        tooLarge: 'المستودع كبير جداً. الحد الأقصى 50MB.',
+        noCode: 'لا توجد ملفات برمجية مدعومة.',
+        error: 'خطأ: ',
+        files: 'ملفات',
+        functions: 'دوال',
+        classes: 'كلاسات',
+        lines: 'أسطر',
+        back: '← العودة لـ DocGen',
+        usage: 'الاستخدام',
+        publicRepo: 'مستودع عام: user/repo او github.com/user/repo',
+        tryExamples: 'جرب أمثلة: user/repo1 • user/repo2',
+        privateNotSupported: 'المستودعات الخاصة غير مدعومة',
+        funcs: 'دوال',
+        funcsTitle: 'Functions',
+        classesTitle: 'Classes'
+    },
+    en: {
+        title: 'GitHub Analyzer',
+        subtitle: 'Analyze any public GitHub repository',
+        enterUrl: 'https://github.com/user/repo',
+        hint: 'Enter full URL or just user/repo',
+        analyze: 'Analyze Repository',
+        generating: 'Generating documentation...',
+        generated: 'Documentation generated!',
+        analyzed: 'Analyzed: ',
+        readme: 'README',
+        api: 'API',
+        wiki: 'Wiki',
+        changelog: 'Changelog',
+        md: '📥 MD',
+        html: '🌐 HTML',
+        pdf: '📕 PDF',
+        zip: '📦 ZIP',
+        copied: '✓ Copied!',
+        notFound: 'Repository not found. Check the URL.',
+        tooLarge: 'Repository too large. Max 50MB.',
+        noCode: 'No code files found.',
+        error: 'Error: ',
+        files: 'Files',
+        functions: 'Functions',
+        classes: 'Classes',
+        lines: 'Lines',
+        back: '← Back to DocGen',
+        usage: 'Usage',
+        publicRepo: 'Public repo: user/repo or github.com/user/repo',
+        tryExamples: 'Try examples: user/repo1 • user/repo2',
+        privateNotSupported: 'Private repos not supported',
+        funcs: 'Functions',
+        funcsTitle: 'Functions',
+        classesTitle: 'Classes'
+    }
+};
+
+function T(key) {
+    return (GH_TRANSLATIONS[currentLang] && GH_TRANSLATIONS[currentLang][key]) || key;
+}
+
+function applyGhLang() {
+    currentLang = localStorage.getItem('docgen_lang') || 'ar';
+    var el;
+    el = document.querySelector('h1');
+    if (el) el.textContent = T('title');
+    el = document.querySelector('.subtitle');
+    if (el) el.textContent = T('subtitle');
+    el = document.getElementById('githubUrl');
+    if (el) el.placeholder = T('enterUrl');
+    el = document.querySelector('.hint');
+    if (el) el.textContent = T('hint');
+    el = document.querySelector('.btn-primary');
+    if (el) el.textContent = T('analyze');
+    el = document.querySelector('#loading p');
+    if (el) el.textContent = T('generating');
+    el = document.querySelector('.back');
+    if (el) el.textContent = T('back');
+    
+    // تبويبات
+    var tabs = document.querySelectorAll('.doc-tab');
+    var tabLabels = ['readme', 'api', 'wiki', 'changelog'];
+    for (var i = 0; i < tabs.length && i < tabLabels.length; i++) {
+        tabs[i].textContent = T(tabLabels[i]);
+    }
+    
+    // أزرار التصدير
+    var exportBtns = document.querySelectorAll('.export-row .btn');
+    var exportLabels = ['md', 'html', 'pdf', 'zip'];
+    for (var i = 0; i < exportBtns.length && i < exportLabels.length; i++) {
+        exportBtns[i].textContent = T(exportLabels[i]);
+    }
+}
+
+// ============================================================
+// الدوال
+// ============================================================
+
+function D(id) { return document.getElementById(id); }
+
+var allDocs = {};
+var currentDoc = 'readme';
+
+function showDoc(doc) {
+    currentDoc = doc;
+    var btns = document.querySelectorAll('.doc-tab');
+    for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
+    event.target.classList.add('active');
+    D('doc-readme').classList.remove('active');
+    D('doc-api').classList.remove('active');
+    D('doc-wiki').classList.remove('active');
+    D('doc-changelog').classList.remove('active');
+    D('doc-' + doc).classList.add('active');
+}
+
+async function analyzeGitHub() {
+    var url = D('githubUrl').value.trim();
+    if (!url) { showStatus(T('enterUrl'), 'error'); return; }
+    if (!url.includes('github.com')) { url = 'https://github.com/' + url; }
+
+    D('githubBar').style.display = 'block';
+    D('githubBar').style.width = '0%';
+    D('githubBar').style.background = '#7c3aed';
+    D('resultsArea').style.display = 'none';
+    D('statsBar').style.display = 'none';
+
+    var token = localStorage.getItem('token') || '';
+    var p = setInterval(function() {
+        var w = parseInt(D('githubBar').style.width) || 0;
+        if (w < 90) D('githubBar').style.width = (w + 10) + '%';
+    }, 500);
+
+    try {
+        var r = await fetch('/github', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ url: url })
+        });
+        var d = await r.json();
+        clearInterval(p);
+
+        if (d.success) {
+            if (d.docs && Object.keys(d.docs).length > 0) {
+                allDocs = d.docs;
+                showDocs();
+                showStats({
+                    files_analyzed: d.files_analyzed,
+                    total_functions: d.total_functions,
+                    total_classes: d.total_classes,
+                    total_lines: d.total_lines
+                });
+                D('githubBar').style.width = '100%';
+                D('githubBar').style.background = '#059669';
+                showStatus(T('generated'), 'success');
+            } else {
+                D('githubBar').style.width = '100%';
+                D('githubBar').style.background = '#059669';
+                showStatus(T('analyzed') + d.files_analyzed + ' ' + T('files') + ', ' + d.total_functions + ' ' + T('funcs'), 'success');
+                showStats({
+                    files_analyzed: d.files_analyzed,
+                    total_functions: d.total_functions,
+                    total_classes: d.total_classes,
+                    total_lines: d.total_lines
+                });
+            }
+        } else {
+            D('githubBar').style.width = '100%';
+            D('githubBar').style.background = '#ef4444';
+            var err = d.error || T('error');
+            if (err.includes('not found')) showStatus(T('notFound'), 'error');
+            else if (err.includes('large')) showStatus(T('tooLarge'), 'error');
+            else if (err.includes('No code')) showStatus(T('noCode'), 'error');
+            else showStatus(T('error') + err, 'error');
+        }
+    } catch (e) {
+        clearInterval(p);
+        D('githubBar').style.display = 'none';
+        showStatus(T('error') + e.message, 'error');
+    }
+    setTimeout(function() { D('githubBar').style.display = 'none'; D('githubBar').style.width = '0%'; }, 2000);
+}
+
+function showStatus(msg, type) {
+    var s = D('githubStatus');
+    s.textContent = msg;
+    s.style.display = 'block';
+    if (type == 'success') { s.style.background = '#064e3b'; s.style.color = '#6ee7b7'; }
+    else if (type == 'error') { s.style.background = '#7f1d1d'; s.style.color = '#fca5a5'; }
+}
+
+function showStats(s) {
+    D('statFiles').textContent = s.files_analyzed || 0;
+    D('statFuncs').textContent = s.total_functions || 0;
+    D('statClasses').textContent = s.total_classes || 0;
+    D('statLines').textContent = s.total_lines || 0;
+    D('statsBar').style.display = 'block';
+}
+
+function showDocs() {
+    var readme = [], api = [], wiki = [], changelog = [];
+    for (var k in allDocs) {
+        if (k.toLowerCase().indexOf('readme') >= 0) readme.push(allDocs[k]);
+        else if (k.toLowerCase().indexOf('api') >= 0) api.push(allDocs[k]);
+        else if (k.toLowerCase().indexOf('wiki') >= 0) wiki.push(allDocs[k]);
+        else if (k.toLowerCase().indexOf('changelog') >= 0) changelog.push(allDocs[k]);
+    }
+    D('doc-readme').innerHTML = fmt(readme.join('<hr>'));
+    D('doc-api').innerHTML = fmt(api.join('<hr>'));
+    D('doc-wiki').innerHTML = fmt(wiki.join('<hr>'));
+    D('doc-changelog').innerHTML = fmt(changelog.join('<hr>'));
+    D('resultsArea').style.display = 'block';
+}
+
+function fmt(t) {
+    if (!t) return '<p style="color:#555">' + T('noContent') + '</p>';
+    return t.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/### (.*)/g, '<h3>$1</h3>')
+        .replace(/## (.*)/g, '<h2>$1</h2>')
+        .replace(/# (.*)/g, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+}
+
+function copyDoc(doc) {
+    var el = D('doc-' + doc);
+    navigator.clipboard.writeText(el.textContent || '').then(function() {
+        var t = D('copyToast');
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 1500);
+    });
+}
+
+async function exportDoc(fmt) {
+    var token = localStorage.getItem('token') || '';
+    var r = await fetch('/export?format=' + fmt, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ docs: allDocs })
+    });
+    if (r.ok) {
+        var b = await r.blob();
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = 'docs.' + (fmt == 'markdown' ? 'md' : fmt);
+        a.click();
+    }
+}
+
+// ============================================================
+// تهيئة
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    applyGhLang();
+});

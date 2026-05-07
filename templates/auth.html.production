@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - حساب</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:30px;width:380px}
+h1{color:#7c3aed;text-align:center;margin-bottom:5px;font-size:1.4em}
+.subtitle{color:#888;text-align:center;margin-bottom:15px;font-size:13px}
+.tabs{display:flex;gap:0;margin-bottom:20px;background:#0f0f1a;border-radius:8px;padding:3px}
+.tab{flex:1;padding:8px;border:none;background:transparent;color:#888;cursor:pointer;font-size:12px;border-radius:6px;transition:all .2s}
+.tab.active{background:#7c3aed;color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:14px}
+button{width:100%;padding:10px;margin-top:8px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;transition:background .2s}
+button:hover{background:#6d28d9}
+.google-btn{background:#2d2d3f;color:#e0e0e0;border:1px solid #444}
+.google-btn:hover{background:#3d3d4f}
+.msg{display:none;padding:8px;border-radius:6px;margin-top:8px;font-size:13px;text-align:center}
+.msg.error{background:#7f1d1d;color:#fca5a5}
+.msg.success{background:#064e3b;color:#6ee7b7}
+a{color:#888;display:block;text-align:center;margin-top:15px;font-size:13px;text-decoration:none}
+a:hover{color:#7c3aed}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>📄 DocGen</h1>
+  <p class="subtitle">توثيق احترافي بالذكاء الاصطناعي</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">دخول</button>
+    <button class="tab" onclick="switchTab('register')">حساب جديد</button>
+    <button class="tab" onclick="switchTab('reset')">نسيت كلمة المرور</button>
+  </div>
+
+  <!-- تبويب الدخول -->
+  <div class="tab-content active" id="tab-login">
+    <input type="text" id="loginUsername" placeholder="اسم المستخدم">
+    <input type="password" id="loginPassword" placeholder="كلمة المرور">
+    <button onclick="doLogin()">دخول</button>
+    <button class="google-btn" onclick="doGoogleLogin()">Google دخول بحساب</button>
+    <p class="msg" id="loginMsg"></p>
+  </div>
+
+  <!-- تبويب التسجيل -->
+  <div class="tab-content" id="tab-register">
+    <input type="text" id="regUsername" placeholder="اسم المستخدم">
+    <input type="email" id="regEmail" placeholder="البريد الإلكتروني">
+    <input type="password" id="regPassword" placeholder="كلمة المرور">
+    <button onclick="doRegister()">إنشاء حساب</button>
+    <p class="msg" id="regMsg"></p>
+  </div>
+
+  <!-- تبويب استعادة كلمة المرور -->
+  <div class="tab-content" id="tab-reset">
+    <p style="color:#888;font-size:13px;margin-bottom:10px;text-align:center">أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة تعيين كلمة المرور</p>
+    <input type="email" id="resetEmail" placeholder="البريد الإلكتروني">
+    <button onclick="doForgotPassword()">إرسال الرمز</button>
+    <p class="msg" id="resetMsg"></p>
+  </div>
+
+  <a href="/">العودة للرئيسية</a>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function showMsg(id, text, type) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+  setTimeout(function(){ el.style.display = 'none'; }, 4000);
+}
+
+async function doLogin() {
+  var u = document.getElementById('loginUsername').value;
+  var p = document.getElementById('loginPassword').value;
+  if (!u || !p) { showMsg('loginMsg', 'املأ جميع الحقول', 'error'); return; }
+  try {
+    var r = await fetch('/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: u, password: p})
+    });
+    var d = await r.json();
+    if (d.success) {
+      localStorage.setItem('token', d.token);
+      showMsg('loginMsg', 'تم الدخول بنجاح', 'success');
+      setTimeout(function(){ window.location.href = '/'; }, 1000);
+    } else {
+      showMsg('loginMsg', d.error || 'فشل الدخول', 'error');
+    }
+  } catch(e) {
+    showMsg('loginMsg', 'خطأ في الاتصال', 'error');
+  }
+}
+
+async function doRegister() {
+  var u = document.getElementById('regUsername').value;
+  var e = document.getElementById('regEmail').value;
+  var p = document.getElementById('regPassword').value;
+  if (!u || !e || !p) { showMsg('regMsg', 'املأ جميع الحقول', 'error'); return; }
+  try {
+    var r = await fetch('/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: u, email: e, password: p})
+    });
+    var d = await r.json();
+    if (d.success) {
+      showMsg('regMsg', d.message || 'تم التسجيل. تحقق من بريدك', 'success');
+    } else {
+      showMsg('regMsg', d.error || 'فشل التسجيل', 'error');
+    }
+  } catch(e) {
+    showMsg('regMsg', 'خطأ في الاتصال', 'error');
+  }
+}
+
+async function doForgotPassword() {
+  var e = document.getElementById('resetEmail').value;
+  if (!e) { showMsg('resetMsg', 'أدخل بريدك الإلكتروني', 'error'); return; }
+  try {
+    var r = await fetch('/forgot-password', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: e})
+    });
+    var d = await r.json();
+    if (d.success) {
+      showMsg('resetMsg', 'تم إرسال رمز إعادة التعيين', 'success');
+    } else {
+      showMsg('resetMsg', d.error || 'بريد غير موجود', 'error');
+    }
+  } catch(e) {
+    showMsg('resetMsg', 'خطأ في الاتصال', 'error');
+  }
+}
+
+function doGoogleLogin() {
+  showMsg('loginMsg', 'Google تسجيل الدخول عبر يحتاج إعداد إضافي', 'error');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - GitHub</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+#githubUrl{text-align:center;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<h1 style="text-align:center">محلل GitHub</h1>
+<p class="subtitle" style="text-align:center">حلل أي مستودع GitHub عام</p>
+
+<div class="container">
+<input type="text" id="githubUrl" placeholder="https://github.com/user/repo">
+<p class="hint">أدخل رابط كامل أو user/repo فقط</p>
+
+<div style="background:#1e3a5f;color:#93c5fd;padding:12px;border-radius:8px;margin:10px 0;font-size:12px;text-align:right;line-height:1.8">
+<strong>الاستخدام:</strong><br>
+• مستودع عام: <code>user/repo</code> أو <code>github.com/user/repo</code><br>
+• المستودعات الخاصة غير مدعومة
+</div>
+
+<button class="btn btn-primary" onclick="analyzeGitHub()" style="width:100%">تحليل المستودع</button>
+<div class="bar" id="githubBar"></div>
+<div class="status-msg" id="githubStatus"></div>
+
+<div class="loading" id="loading"><div class="spinner"></div><p>جاري توليد التوثيق...</p></div>
+
+<div class="stats-bar" id="statsBar">
+  <span id="statFiles">0</span> ملفات | <span id="statFuncs">0</span> دوال | <span id="statClasses">0</span> كلاسات | <span id="statLines">0</span> أسطر
+</div>
+
+<div class="results-area" id="resultsArea">
+  <div class="doc-tabs">
+    <button class="doc-tab active" onclick="showDoc('readme')">README</button>
+    <button class="doc-tab" onclick="showDoc('api')">API</button>
+    <button class="doc-tab" onclick="showDoc('wiki')">Wiki</button>
+    <button class="doc-tab" onclick="showDoc('changelog')">Changelog</button>
+    <button class="copy-btn" onclick="copyDoc('readme')">📋</button>
+    <button class="copy-btn" onclick="copyDoc('api')">📋</button>
+    <button class="copy-btn" onclick="copyDoc('wiki')">📋</button>
+    <button class="copy-btn" onclick="copyDoc('changelog')">📋</button>
+  </div>
+  <div class="doc-content active" id="doc-readme"></div>
+  <div class="doc-content" id="doc-api"></div>
+  <div class="doc-content" id="doc-wiki"></div>
+  <div class="doc-content" id="doc-changelog"></div>
+  <div class="export-row">
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('markdown')">📥 MD</button>
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('html')">🌐 HTML</button>
+    <button class="btn btn-sm btn-secondary" onclick="exportDoc('pdf')">📕 PDF</button>
+    <button class="btn btn-sm btn-primary" onclick="exportDoc('zip')">📦 ZIP</button>
+  </div>
+</div>
+
+<div class="copy-toast" id="copyToast">✓ تم النسخ!</div>
+<a href="/" class="back">← العودة لـ DocGen</a>
+</div>
+
+<script src="/static/js/github.js"></script>
+</body>
+</html>

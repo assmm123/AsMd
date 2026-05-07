@@ -1,0 +1,26 @@
+"""اختبار ملفات UI"""
+from pathlib import Path
+BASE_DIR = Path(__file__).parent.parent.parent
+
+class TestIndexHTML:
+    def test_uses_main_css(self):
+        content = open(BASE_DIR / 'templates/index.html').read()
+        assert 'main.css' in content
+    def test_uses_app_js(self):
+        content = open(BASE_DIR / 'templates/index.html').read()
+        assert 'app.js' in content
+
+class TestLoginHTML:
+    def test_uses_main_css(self):
+        content = open(BASE_DIR / 'templates/login.html').read()
+        assert 'main.css' in content
+
+class TestDocsHTML:
+    def test_uses_main_css(self):
+        content = open(BASE_DIR / 'templates/docs.html').read()
+        assert 'main.css' in content
+
+class TestGithubHTML:
+    def test_uses_main_css(self):
+        content = open(BASE_DIR / 'templates/github.html').read()
+        assert 'main.css' in content

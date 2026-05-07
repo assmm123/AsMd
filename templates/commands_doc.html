@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>أوامر التحليل</title><link rel="stylesheet" href="/static/css/main.css"><style>
+.section{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin:15px 0}.section h2{color:#7c3aed;margin-bottom:15px}.section h3{color:#a78bfa;margin:15px 0 8px}.section table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}.section th{background:#7c3aed;padding:8px;text-align:right}.section td{padding:6px 8px;border:1px solid #333}pre{background:#0f0f1a;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.6}code{color:#f472b6}.result{background:#0a0a14;border-left:3px solid #059669;border-radius:6px;padding:10px;margin:8px 0;font-size:11px;color:#6ee7b7;font-family:monospace;white-space:pre-wrap}.cmd{background:#0f0f1a;padding:10px;border-radius:6px;margin:5px 0;font-size:12px;font-family:monospace}
+</style></head>
+<body>
+<div class="header"><h1>📂 أوامر التحليل</h1><p class="subtitle">Doc Analysis Commands</p></div>
+<div class="container">
+<div class="section">
+<h2>📋 الأوامر</h2>
+<table><tr><th>الأمر</th><th>الوظيفة</th><th>مثال</th></tr>
+<tr><td><code>ta</code></td><td>تحليل</td><td><code>ta src/</code></td></tr>
+<tr><td><code>tth</code></td><td>توثيق</td><td><code>tth src/</code></td></tr>
+<tr><td><code>go</code></td><td>إنتاجية</td><td><code>go .</code></td></tr>
+<tr><td><code>all</code></td><td>الكل</td><td><code>all .</code></td></tr></table>
+
+<h3>📄 تحليل ملف</h3>
+<div class="cmd"><code>ta app.py</code></div>
+<div class="result">📄 app.py | Python | 12 funcs | 3 classes | 450 lines</div>
+
+<h3>📁 تحليل مجلد</h3>
+<div class="cmd"><code>tth src/</code></div>
+<div class="result">✅ docs/README.md (934 chars)<br>✅ docs/API_DOCS.md (2300 chars)</div>
+
+<h3>🐙 تحليل GitHub</h3>
+<div class="cmd"><code>python cli.py github user/repo</code></div>
+<div class="result">🔍 Analyzing user/repo...<br>📦 user/repo<br>📄 Files: 51 | ⚡ Functions: 593 | 📏 Lines: 12498<br>✅ Generated: user_repo_README.md</div>
+
+<h3>🚀 فحص إنتاجية</h3>
+<div class="cmd"><code>go .</code></div>
+<div class="result">📊 Score: 10/10 - PRODUCTION READY<br>✅ Functions: 503<br>✅ README: Found<br>✅ Tests: Found</div>
+
+<h3>📥 التثبيت</h3>
+<pre><code>alias ta="python ~/doc-generator/cli.py ta"
+alias tth="python ~/doc-generator/cli.py tth"
+alias go="python ~/doc-generator/cli.py go"
+alias all="python ~/doc-generator/cli.py all"
+source ~/.bashrc</code></pre>
+</div>
+<a href="/" class="back" style="text-align:center;display:block;margin-top:20px">← العودة</a>
+</div></body></html>

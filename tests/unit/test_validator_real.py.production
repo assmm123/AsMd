@@ -1,0 +1,48 @@
+"""اختبار validator.py - المنطق الحقيقي"""
+
+def test_detect_language():
+    from src.security.validator import detect_language
+    assert detect_language('app.py') == 'Python'
+    assert detect_language('script.js') == 'JavaScript'
+    assert detect_language('page.html') == 'HTML'
+    assert detect_language('style.css') == 'CSS'
+    assert detect_language('unknown.xyz') == 'Unknown'
+
+def test_sanitize_filename():
+    from src.security.validator import sanitize_filename
+    assert sanitize_filename('../../../etc/passwd') == 'passwd'
+    assert sanitize_filename('test.py') == 'test.py'
+    assert sanitize_filename('/root/secret.txt') == 'secret.txt'
+
+def test_validate_file_size():
+    from src.security.validator import validate_file_size
+    assert validate_file_size(b'hello', 100) == True
+    assert validate_file_size(b'hello', 2) == False
+
+def test_validate_file_extension():
+    from src.security.validator import validate_file_extension
+    assert validate_file_extension('test.py') == True
+    assert validate_file_extension('test.exe') == False
+    assert validate_file_extension('test.js') == True
+
+def test_get_file_stats():
+    from src.security.validator import get_file_stats
+    stats = get_file_stats('config.py')
+    assert stats['exists'] == True
+    assert stats['size'] > 0
+    assert stats['extension'] == '.py'
+
+def test_validate_file():
+    from src.security.validator import validate_file
+    assert validate_file('test.py', 'print(1)') == True
+    assert validate_file('test.exe', 'x') == False
+
+def test_validate_username():
+    from src.security.validator import validate_username
+    assert validate_username('ab') == (False, "Username must be at least 3 characters")
+    assert validate_username('valid_user') == (True, "")
+
+def test_validate_email():
+    from src.security.validator import validate_email
+    assert validate_email('user@domain.com') == (True, "")
+    assert validate_email('invalid') == (False, "Invalid email format")

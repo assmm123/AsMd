@@ -1,0 +1,110 @@
+/* ============================================================
+   DocGen - Main Stylesheet
+   Arabic / English - RTL / LTR support
+   ============================================================ */
+
+/* Reset */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* Body */
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh}
+
+/* Header */
+.header{background:linear-gradient(180deg,#1a1a2e,#0f0f1a);padding:20px;text-align:center;border-bottom:2px solid #7c3aed}
+.header h1{color:#7c3aed;font-size:1.5em}
+.subtitle{text-align:center;color:#888;font-size:14px;margin-top:2px}
+
+/* Language Buttons */
+.lang-btns{display:flex;gap:4px;justify-content:center;margin-top:8px}
+.lang-btn{padding:4px 12px;border:1px solid #444;border-radius:14px;cursor:pointer;font-size:12px;background:transparent;color:#888;transition:all .2s}
+.lang-btn.active{background:#7c3aed;color:#fff;border-color:#7c3aed}
+
+/* Container */
+.container{max-width:1000px;margin:0 auto;padding:15px}
+
+/* Dropzone */
+.dropzone{border:2px dashed #333;border-radius:12px;padding:30px;text-align:center;cursor:pointer;margin-bottom:15px}
+.dropzone:hover,.dropzone.dragover{border-color:#7c3aed;background:#1a1a2e}
+.dropzone .icon{font-size:2.5em;margin-bottom:8px}
+.dropzone .text{color:#888;font-size:.9em}
+.dropzone .hint{color:#555;font-size:.75em;margin-top:5px}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:.9em;font-family:inherit;transition:all .2s}
+.btn-primary{background:#7c3aed;color:#fff}.btn-primary:hover{background:#6d28d9;transform:translateY(-1px)}
+.btn-secondary{background:#2d2d3f;color:#e0e0e0;border:1px solid #444}
+.btn-sm{padding:4px 10px;font-size:.8em}
+
+/* File List */
+.file-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:15px}
+.file-item{background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.85em;display:flex;align-items:center;gap:8px}
+.file-item:hover,.file-item.active{border-color:#7c3aed;background:#2d2d3f}
+.file-item.error{border-color:#ef4444;background:#2d1f1f}
+.file-item .lang{background:#7c3aed;color:#fff;padding:1px 6px;border-radius:8px;font-size:.7em}
+.file-item .remove{color:#f472b6;cursor:pointer;font-weight:bold}
+.file-item .err-msg{color:#fca5a5;font-size:.7em;display:block;margin-top:2px}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:20px}
+.spinner{width:35px;height:35px;border:3px solid #333;border-top:3px solid #7c3aed;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Status Messages */
+.status{display:none;padding:8px 12px;border-radius:6px;margin:8px 0;font-size:.85em}
+.status.success{background:#064e3b;color:#6ee7b7}
+.status.error{background:#7f1d1d;color:#fca5a5}
+
+/* Stats Bar */
+.stats-bar{background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px 15px;margin-bottom:10px;display:none;gap:20px;flex-wrap:wrap;font-size:.8em;color:#888}
+.stats-bar span{color:#a78bfa;font-weight:bold}
+
+/* Results Area */
+.results-area{display:none;margin-top:15px}
+
+/* Toolbar & Tabs */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.tabs{display:flex;gap:2px;background:#1a1a2e;border-radius:8px;padding:3px}
+.tab{padding:6px 14px;background:transparent;border:none;border-radius:6px;cursor:pointer;color:#888;font-size:.85em}
+.tab.active{background:#7c3aed;color:#fff}
+
+/* Tab Content */
+.tab-content{display:none;background:#1a1a2e;border:1px solid #333;border-radius:0 8px 8px 8px;padding:15px;min-height:200px;max-height:450px;overflow-y:auto;font-size:.85em;line-height:1.7}
+.tab-content.active{display:block}
+.tab-content h1,.tab-content h2,.tab-content h3{color:#a78bfa;margin:8px 0}
+.tab-content code{background:#0f0f1a;padding:1px 5px;border-radius:3px;color:#f472b6}
+
+/* Toast */
+.copy-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#059669;color:#fff;padding:10px 24px;border-radius:20px;font-size:.9em;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.copy-toast.show{opacity:1}
+
+/* Export Row */
+.export-row{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+
+/* Links */
+a{color:#7c3aed;text-decoration:none}
+a:hover{color:#a78bfa}
+
+/* Cards (login/auth pages) */
+.card{background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:30px;width:380px}
+.card h1{color:#7c3aed;text-align:center;margin-bottom:5px;font-size:1.4em}
+.card input{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f1a;color:#e0e0e0;font-size:14px}
+.card button{width:100%;padding:10px;margin-top:8px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer}
+.card button:hover{background:#6d28d9}
+.card .google-btn{background:#2d2d3f;color:#e0e0e0;border:1px solid #444}
+.card .google-btn:hover{background:#3d3d4f}
+.card .msg{display:none;padding:8px;border-radius:6px;margin-top:8px;font-size:13px;text-align:center}
+.card .msg.error{background:#7f1d1d;color:#fca5a5}
+.card .msg.success{background:#064e3b;color:#6ee7b7}
+
+/* Docs page */
+pre{background:#1a1a2e;padding:12px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.8}
+code{color:#f472b6}
+.back{color:#888;font-size:13px;margin-bottom:20px;display:block}
+
+/* Responsive */
+@media(max-width:600px){
+  .container{padding:8px}
+  .dropzone{padding:20px}
+  .card{width:100%;padding:20px}
+}

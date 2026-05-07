@@ -1,0 +1,58 @@
+"""اختبار email.py - المنطق الحقيقي"""
+
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from src.auth.email import send_email, send_verification, send_reset_password
+from src.auth.email import SMTP_HOST, SMTP_PORT, MAIL_USERNAME, MAIL_PASSWORD
+
+
+class TestEmailConfig:
+    """اختبارات الإعدادات"""
+
+    def test_smtp_host_is_gmail(self):
+        """مضيف SMTP هو Gmail"""
+        assert SMTP_HOST == 'smtp.gmail.com'
+
+    def test_smtp_port_is_587(self):
+        """منفذ SMTP هو 587 (TLS)"""
+        assert SMTP_PORT == 587
+
+    def test_mail_username_from_env(self):
+        """MAIL_USERNAME يقرأ من البيئة"""
+        assert isinstance(MAIL_USERNAME, str)
+
+    def test_mail_password_from_env(self):
+        """MAIL_PASSWORD يقرأ من البيئة"""
+        assert isinstance(MAIL_PASSWORD, str)
+
+
+class TestSendVerification:
+    """اختبارات إرسال التحقق"""
+
+    def test_send_verification_returns_bool(self):
+        """ترجع True أو False"""
+        result = send_verification('test@test.com', 'testuser', '123456')
+        assert isinstance(result, bool)
+
+    def test_send_reset_password_returns_bool(self):
+        """ترجع True أو False"""
+        result = send_reset_password('test@test.com', 'testuser', 'abc123')
+        assert isinstance(result, bool)
+
+
+class TestNoSecretsExposed:
+    """اختبارات عدم كشف الأسرار"""
+
+    def test_no_hardcoded_password(self):
+        """لا توجد كلمة مرور ثابتة في الكود"""
+        import inspect
+        source = inspect.getsource(send_email)
+        assert "'qdhirpkiybbgrcip'" not in source
+        assert "qdhirpkiybbgrcip" not in source
+
+    def test_no_hardcoded_email_in_source(self):
+        """لا يوجد بريد ثابت في دوال الإرسال"""
+        import inspect
+        source = inspect.getsource(send_email)
+        assert "'assmm944@gmail.com'" not in source

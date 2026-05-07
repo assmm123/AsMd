@@ -1,0 +1,81 @@
+"""Tests for main.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from main import *
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+class TestPwa_manifest:
+    def test_exists(self):
+        assert callable(pwa_manifest)
+
+class TestPwa_sw:
+    def test_exists(self):
+        assert callable(pwa_sw)
+
+class TestAnalyze_text:
+    def test_exists(self):
+        assert callable(analyze_text)
+
+    def test_valid(self):
+        result = analyze_text("print('hello')", "test.py")
+        assert result is not None
+
+class TestPublicRoutes:
+    def test_index_returns_200(self, client):
+        resp = client.get('/')
+        assert resp.status_code == 200
+
+    def test_docs_returns_200(self, client):
+        resp = client.get('/docs')
+        assert resp.status_code == 200
+
+    def test_github_page_returns_200(self, client):
+        resp = client.get('/github-page')
+        assert resp.status_code == 200
+
+    def test_auth_returns_200(self, client):
+        resp = client.get('/auth')
+        assert resp.status_code == 200
+
+    def test_app_returns_200(self, client):
+        resp = client.get('/app')
+        assert resp.status_code == 200
+
+    def test_stats_returns_200(self, client):
+        resp = client.get('/stats')
+        assert resp.status_code == 200
+
+        resp = client.get('/login')
+        assert resp.status_code == 200
+
+        assert resp.status_code == 200
+
+class TestProtectedRoutes:
+    def test_upload_rejects(self, client):
+        resp = client.post('/upload', json={})
+        assert resp.status_code == 401
+
+    def test_generate_rejects(self, client):
+        resp = client.post('/generate', json={})
+        assert resp.status_code == 401
+
+    def test_export_rejects(self, client):
+        resp = client.post('/export', json={})
+        assert resp.status_code == 401
+
+    def test_github_rejects(self, client):
+        resp = client.post('/github', json={})
+        assert resp.status_code == 401
+
+    def test_me_rejects(self, client):
+        resp = client.get('/me')
+        assert resp.status_code == 401
+
+        assert resp.status_code == 401

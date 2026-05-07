@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen - دليل الأوامر</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<style>
+.guide-section{background:#1a1a2e;border:1px solid #333;border-radius:12px;padding:20px;margin:15px 0}
+.guide-section h2{color:#7c3aed;margin-bottom:15px}
+.guide-section h3{color:#a78bfa;margin:15px 0 8px}
+.guide-section table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.guide-section th{background:#7c3aed;padding:8px;text-align:right}
+.guide-section td{padding:6px 8px;border:1px solid #333}
+pre{background:#0f0f1a;padding:12px;border-radius:8px;overflow-x:auto;font-size:12px;line-height:1.6}
+code{color:#f472b6}
+.result-box{background:#0a0a14;border-left:3px solid #059669;border-radius:6px;padding:10px;margin:8px 0;font-size:11px;color:#6ee7b7;font-family:monospace;white-space:pre-wrap}
+.cmd-box{background:#0f0f1a;padding:10px;border-radius:6px;margin:5px 0;font-size:12px;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="header"><h1>🧪 دليل الأوامر</h1><p class="subtitle">أوامر التحليل والاختبار</p></div>
+<div class="container">
+
+<!-- أوامر التحليل -->
+<div class="guide-section">
+<h2>📂 أوامر التحليل</h2>
+<table>
+<tr><th>الأمر</th><th>الوظيفة</th><th>مثال</th></tr>
+<tr><td><code>ta</code></td><td>تحليل ملف/مجلد</td><td><code>ta src/</code></td></tr>
+<tr><td><code>tth</code></td><td>توليد توثيق</td><td><code>tth src/</code></td></tr>
+<tr><td><code>go</code></td><td>فحص إنتاجية</td><td><code>go .</code></td></tr>
+<tr><td><code>all</code></td><td>الكل</td><td><code>all .</code></td></tr>
+</table>
+
+<h3>📄 تحليل ملف</h3>
+<div class="cmd-box"><code>ta app.py</code></div>
+<div class="result-box">📄 app.py | Python | 12 funcs | 3 classes | 450 lines</div>
+
+<h3>📁 تحليل مجلد</h3>
+<div class="cmd-box"><code>tth src/</code></div>
+<div class="result-box">✅ docs/README.md (934 chars)
+✅ docs/API_DOCS.md (2300 chars)</div>
+
+<h3>🐙 تحليل GitHub</h3>
+<div class="cmd-box"><code>python cli.py github user/repo</code></div>
+<div class="result-box">🔍 Analyzing user/repo...
+📦 user/repo
+📄 Files: 51 | ⚡ Functions: 593 | 📏 Lines: 12498
+✅ Generated: user_repo_README.md</div>
+</div>
+
+<!-- أوامر الاختبار -->
+<div class="guide-section">
+<h2>⚡ أوامر الاختبار</h2>
+<table>
+<tr><th>الأمر</th><th>الوظيفة</th><th>مثال</th></tr>
+<tr><td><code>etest</code></td><td>تحليل + توليد + إصلاح</td><td><code>etest src/</code></td></tr>
+<tr><td><code>etest -f</code></td><td>إصلاح اختبارات</td><td><code>etest -f tests/</code></td></tr>
+<tr><td><code>etest -w</code></td><td>مراقبة</td><td><code>etest -w</code></td></tr>
+<tr><td><code>etest -r</code></td><td>تقرير</td><td><code>etest -r</code></td></tr>
+<tr><td><code>etest -i</code></td><td>تكامل</td><td><code>etest -i a.py b.py</code></td></tr>
+</table>
+
+<h3>🧪 توليد اختبارات</h3>
+<div class="cmd-box"><code>etest src/auth.py</code></div>
+<div class="result-box">🧠 3 functions, 1 class
+🤲 12 tests → tests/test_auth.py
+🧪 10 passed, 2 failed
+🔧 2 healed ✅</div>
+
+<h3>🔧 إصلاح</h3>
+<div class="cmd-box"><code>etest -f tests/</code></div>
+<div class="result-box">📄 test_auth.py: 12 tests
+   ✅ 10 passed (untouched)
+   ❌ 2 failed → 🔧 healed
+2/3 healed</div>
+
+<h3>👁️ مراقبة</h3>
+<div class="cmd-box"><code>etest -w</code></div>
+<div class="result-box">👁️ Watching ~ src/
+[14:30] auth.py → ✅ 12 tests
+Ctrl+C to stop</div>
+
+<h3>📊 تقرير</h3>
+<div class="cmd-box"><code>etest -r</code></div>
+<div class="result-box">Sessions: 42 | Tests: 1,250
+Fixes: 89 | Rate: 88%</div>
+
+<h3>📥 تثبيت</h3>
+<pre><code>alias etest='python ~/doc-generator/src/testing/emperor/emperor.py'
+source ~/.bashrc</code></pre>
+</div>
+
+<a href="/" class="back" style="text-align:center;display:block;margin-top:20px">← العودة</a>
+</div>
+</body>
+</html>

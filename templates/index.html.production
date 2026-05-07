@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocGen</title>
+<link rel="manifest" href="/pwa/manifest.json">
+<link rel="stylesheet" href="/static/css/main.css">
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("/pwa/service-worker.js")}</script>
+</head>
+<body>
+<div class="header">
+  <h1>📄 DocGen</h1>
+  <p class="subtitle">Smart Documentation Generator</p>
+  <div class="lang-btns">
+    <button class="lang-btn active" id="btnAr" onclick="switchLang('ar')">AR</button>
+    <button class="lang-btn" id="btnEn" onclick="switchLang('en')">EN</button>
+  </div>
+</div>
+<div class="container">
+
+<div class="dropzone" id="dropzone">
+  <div class="icon">📁</div>
+  <div class="text">Drop files here or click to browse</div>
+  <div class="hint">Python .py | JavaScript .js | HTML .html | CSS .css</div>
+  <input type="file" id="fileInput" multiple hidden accept=".py,.js,.jsx,.ts,.tsx,.html,.css,.json,.java,.php,.rb,.go,.rs,.swift,.c,.cpp,.h,.md,.txt,.csv,.sql,.yaml,.yml,.xml">
+</div>
+
+<div style="text-align:center;margin-bottom:15px">
+  <button class="btn btn-sm btn-secondary" onclick="toggleHelp()" id="btnHelp">Show supported files</button>
+  <div id="helpBox" style="display:none;background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:15px;margin-top:10px;text-align:right;font-size:0.8em;color:#888">
+    <p style="color:#a78bfa;margin-bottom:8px"><strong>Supported extensions:</strong></p>
+    <p>.py .js .jsx .ts .tsx .html .css .json .xml .yaml .yml</p>
+    <p>.java .php .rb .go .rs .swift .c .cpp .h .kt .scala .r .m .mm</p>
+    <p>.md .txt .csv .sql .sh .bash</p>
+    <p style="color:#f472b6;margin-top:8px"><strong>Blocked:</strong> .exe .dll .so .apk .db .sqlite .pdf .zip .png .jpg</p>
+  </div>
+</div>
+
+<div class="file-list" id="fileList"></div>
+<div style="text-align:center;margin:10px 0"><a href="/github-page">Analyze GitHub Repository</a></div>
+<div class="btn-row" id="actionBtns" style="display:none">
+  <button class="btn btn-primary" id="btnGenerateAll">Generate All</button>
+  <button class="btn btn-secondary" id="btnClear">Clear</button>
+  <button class="btn btn-secondary" onclick="installApp()">📲 Install</button>
+  <a href="/docs" class="btn btn-secondary" style="text-decoration:none;display:inline-block">📄 Docs</a>
+</div>
+<div class="loading" id="loading"><div class="spinner"></div><p>Generating...</p></div>
+<div class="status" id="status"></div>
+<div class="copy-toast" id="copyToast">✓ Copied!</div>
+<div class="stats-bar" id="statsBar"><span id="statFiles">0</span> Files | <span id="statFuncs">0</span> Funcs | <span id="statClasses">0</span> Classes | <span id="statLines">0</span> Lines</div>
+<div class="results-area" id="resultsArea">
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" data-tab="readme">README <span onclick="event.stopPropagation();copyTab('readme')">📋</span></button>
+      <button class="tab" data-tab="api">API <span onclick="event.stopPropagation();copyTab('api')">📋</span></button>
+      <button class="tab" data-tab="wiki">Wiki <span onclick="event.stopPropagation();copyTab('wiki')">📋</span></button>
+      <button class="tab" data-tab="changelog">Changelog <span onclick="event.stopPropagation();copyTab('changelog')">📋</span></button>
+    </div>
+  </div>
+  <div class="tab-content active" id="tab-readme"></div>
+  <div class="tab-content" id="tab-api"></div>
+  <div class="tab-content" id="tab-wiki"></div>
+  <div class="tab-content" id="tab-changelog"></div>
+  <div class="export-row">
+    <button class="btn btn-sm btn-secondary" id="btnMD">📥 MD</button>
+    <button class="btn btn-sm btn-secondary" id="btnHTML">🌐 HTML</button>
+    <button class="btn btn-sm btn-secondary" id="btnPDF">📕 PDF</button>
+    <button class="btn btn-sm btn-primary" id="btnZIP">📦 ZIP</button>
+  </div>
+</div>
+</div>
+
+<div id="pwaStatus" style="display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:20px;color:#fff;font-size:13px;z-index:9999;text-align:center"></div>
+
+<script>
+function switchLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('docgen_lang', lang);
+  document.getElementById('btnAr').classList.remove('active');
+  document.getElementById('btnEn').classList.remove('active');
+  if (lang === 'ar') {
+    document.getElementById('btnAr').classList.add('active');
+    document.body.dir = 'rtl';
+    document.body.lang = 'ar';
+  } else {
+    document.getElementById('btnEn').classList.add('active');
+    document.body.dir = 'ltr';
+    document.body.lang = 'en';
+  }
+  applyLang();
+}
+</script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

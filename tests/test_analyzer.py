@@ -1,0 +1,100 @@
+"""Tests for analyzer.py"""
+import pytest, sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.core.analyzer import *
+from src.core.analyzer import PythonAnalyzer, JavaScriptAnalyzer, HTMLAnalyzer, CSSAnalyzer, JSONAnalyzer, GeneralAnalyzer
+
+
+@pytest.fixture
+def test_setup():
+    """Auto-generated fixture"""
+    # TODO: add proper setup
+    yield
+    # TODO: add proper teardown
+
+SAMPLE_PY = "def hello():\n    return 'world'\n"
+SAMPLE_JS = "function hello() { return 'world'; }"
+SAMPLE_HTML = "<html><body><h1>Test</h1></body></html>"
+SAMPLE_CSS = "body { color: red; }"
+SAMPLE_JSON = '{"key": "value"}'
+SAMPLE_TEXT = "Hello World"
+
+class TestAnalyze_file:
+    def test_exists(self):
+        assert callable(analyze_file)
+
+    def test_valid(self):
+        result = analyze_file("config.py")
+        assert result is not None
+
+class TestAnalyze_directory:
+    def test_exists(self):
+        assert callable(analyze_directory)
+
+    def test_valid(self):
+        result = analyze_directory("/tmp")
+        assert result is not None
+
+class TestPythonAnalyzer:
+    def test_create(self):
+        obj = PythonAnalyzer(SAMPLE_PY)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = PythonAnalyzer(SAMPLE_PY)
+        assert hasattr(obj, "analyze")
+
+    def test_analyze_returns_dict(self):
+        obj = PythonAnalyzer(SAMPLE_PY)
+        result = obj.analyze()
+        assert isinstance(result, dict)
+
+class TestJavaScriptAnalyzer:
+    def test_create(self):
+        obj = JavaScriptAnalyzer(SAMPLE_JS)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = JavaScriptAnalyzer(SAMPLE_JS)
+        assert hasattr(obj, "analyze")
+
+    def test_analyze_returns_dict(self):
+        obj = JavaScriptAnalyzer(SAMPLE_JS)
+        result = obj.analyze()
+        assert isinstance(result, dict)
+
+class TestHTMLAnalyzer:
+    def test_create(self):
+        obj = HTMLAnalyzer(SAMPLE_HTML)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = HTMLAnalyzer(SAMPLE_HTML)
+        assert hasattr(obj, "analyze")
+
+class TestCSSAnalyzer:
+    def test_create(self):
+        obj = CSSAnalyzer(SAMPLE_CSS)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = CSSAnalyzer(SAMPLE_CSS)
+        assert hasattr(obj, "analyze")
+
+class TestJSONAnalyzer:
+    def test_create(self):
+        obj = JSONAnalyzer(SAMPLE_JSON)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = JSONAnalyzer(SAMPLE_JSON)
+        assert hasattr(obj, "analyze")
+
+class TestGeneralAnalyzer:
+    def test_create(self):
+        obj = GeneralAnalyzer(SAMPLE_TEXT)
+        assert obj is not None
+
+    def test_analyze_exists(self):
+        obj = GeneralAnalyzer(SAMPLE_TEXT)
+        assert hasattr(obj, "analyze")
